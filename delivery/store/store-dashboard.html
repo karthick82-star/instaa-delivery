@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Store Dashboard - FreshMart Superstore</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/store.css">
+</head>
+<body class="dashboard-layout">
+
+  <!-- Sidebar -->
+  <aside class="dashboard-sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon" style="background: linear-gradient(135deg, #d97706, #f59e0b);">
+        <i class="fa-solid fa-store"></i>
+      </div>
+      <div class="brand-text">
+        <h2>FreshMart</h2>
+        <span>Store Operations</span>
+      </div>
+    </div>
+
+    <div class="sidebar-role-badge">
+      <i class="fa-solid fa-shop"></i>
+      <span>Logged in as <strong>Store Manager</strong></span>
+    </div>
+
+    <ul class="sidebar-nav">
+      <div class="nav-section-title">Order Fulfilment</div>
+      <li><a href="store-dashboard.html" class="active"><i class="fa-solid fa-gauge-high"></i> Store Dashboard</a></li>
+      <li>
+        <a href="incoming-orders.html">
+          <i class="fa-solid fa-inbox"></i> Incoming Orders
+          <span class="nav-badge" id="incoming-count-badge" style="background-color: var(--danger);">0</span>
+        </a>
+      </li>
+      <li><a href="order-management.html"><i class="fa-solid fa-boxes-packing"></i> Order Management</a></li>
+      <li><a href="store-wallet.html"><i class="fa-solid fa-wallet"></i> Store Wallet & Ledger</a></li>
+    </ul>
+
+    <div class="sidebar-user">
+      <div class="user-profile-info">
+        <img src="https://images.unsplash.com/photo-1578916171728-46686eac8d58?w=150&auto=format&fit=crop&q=80" alt="Store Manager" class="user-profile-avatar">
+        <div class="user-profile-text">
+          <div class="user-name">FreshMart Store</div>
+          <div class="user-role">Central Metro Outlet</div>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="Auth.logoutUser()" title="Logout">
+        <i class="fa-solid fa-power-off"></i>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dashboard-main">
+    <header class="dashboard-header">
+      <div class="header-left">
+        <button class="mobile-toggle" id="mobile-sidebar-toggle">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="header-title-box">
+          <h1>Store Operations Overview</h1>
+          <p>FreshMart Superstore (STR-001) • 108 Market Square, Bangalore</p>
+        </div>
+      </div>
+
+      <div class="header-right" style="display: flex; align-items: center; gap: 0.75rem;">
+        <!-- Online/Offline Store Toggle (Feature 2: The Neighbors) -->
+        <div class="flex items-center gap-2" style="background: var(--bg-alt); padding: 0.35rem 0.75rem; border-radius: var(--radius-full); border: 1px solid var(--border-light);">
+          <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted);">Shop Duty:</span>
+          <button class="btn btn-sm btn-success" id="btn-store-duty-toggle" onclick="toggleStoreOnlineStatus()">
+            <i class="fa-solid fa-circle"></i> Online
+          </button>
+        </div>
+
+        <a href="incoming-orders.html" class="btn btn-warning btn-sm">
+          <i class="fa-solid fa-bell"></i> Incoming Orders
+        </a>
+        <button class="header-btn" id="btn-notifications" title="Notifications">
+          <i class="fa-regular fa-bell"></i>
+          <span class="header-badge notif-badge">0</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="dashboard-content">
+
+      <!-- 6 Metrics Grid -->
+      <div class="metrics-grid">
+        <!-- New Orders -->
+        <div class="stat-card" style="border-top: 3px solid var(--danger);">
+          <div class="stat-content">
+            <span class="stat-label">New Incoming</span>
+            <div class="stat-value text-danger" id="stat-new-orders">0</div>
+            <div class="stat-hint"><a href="incoming-orders.html" style="font-weight: 600;">Review now &rarr;</a></div>
+          </div>
+          <div class="stat-icon stat-icon-red"><i class="fa-solid fa-bell"></i></div>
+        </div>
+
+        <!-- Preparing -->
+        <div class="stat-card" style="border-top: 3px solid var(--warning);">
+          <div class="stat-content">
+            <span class="stat-label">In Kitchen / Packing</span>
+            <div class="stat-value text-warning" id="stat-preparing-orders">0</div>
+            <div class="stat-hint"><i class="fa-solid fa-fire-burner"></i> Staff packing items</div>
+          </div>
+          <div class="stat-icon stat-icon-amber"><i class="fa-solid fa-box-open"></i></div>
+        </div>
+
+        <!-- Ready for Pickup / Waiting Rider -->
+        <div class="stat-card" style="border-top: 3px solid var(--purple);">
+          <div class="stat-content">
+            <span class="stat-label">Waiting for Rider</span>
+            <div class="stat-value text-purple" id="stat-waiting-orders">0</div>
+            <div class="stat-hint"><i class="fa-solid fa-satellite-dish"></i> Broadcasted to riders</div>
+          </div>
+          <div class="stat-icon stat-icon-purple"><i class="fa-solid fa-motorcycle"></i></div>
+        </div>
+
+        <!-- Dispatched -->
+        <div class="stat-card" style="border-top: 3px solid var(--primary);">
+          <div class="stat-content">
+            <span class="stat-label">Dispatched (Out)</span>
+            <div class="stat-value text-primary" id="stat-dispatched-orders">0</div>
+            <div class="stat-hint"><i class="fa-solid fa-truck-fast"></i> En route to customer</div>
+          </div>
+          <div class="stat-icon stat-icon-blue"><i class="fa-solid fa-road"></i></div>
+        </div>
+
+        <!-- Total Orders -->
+        <div class="stat-card">
+          <div class="stat-content">
+            <span class="stat-label">Total Orders</span>
+            <div class="stat-value" id="stat-total-store-orders">0</div>
+            <div class="stat-hint"><i class="fa-solid fa-clipboard-check"></i> Lifetime volume</div>
+          </div>
+          <div class="stat-icon stat-icon-indigo"><i class="fa-solid fa-receipt"></i></div>
+        </div>
+
+        <!-- Store Balance -->
+        <div class="stat-card">
+          <div class="stat-content">
+            <span class="stat-label">Store Balance</span>
+            <div class="stat-value text-success" id="stat-store-balance">₹0.00</div>
+            <div class="stat-hint"><a href="store-wallet.html" style="font-weight: 600;">View Ledger &rarr;</a></div>
+          </div>
+          <div class="stat-icon stat-icon-green"><i class="fa-solid fa-wallet"></i></div>
+        </div>
+      </div>
+
+      <!-- Live Pipeline Board -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i class="fa-solid fa-chart-line text-warning"></i> Store Fulfilment Pipeline
+          </h3>
+          <a href="order-management.html" class="btn btn-outline btn-sm">Full Pipeline Manager &rarr;</a>
+        </div>
+        <div class="card-body">
+          <div class="order-pipeline-board" id="store-pipeline-preview">
+            <!-- Dynamically populated columns -->
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Scripts -->
+  <script src="../js/storage.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/products.js"></script>
+  <script src="../js/cart.js"></script>
+  <script src="../js/orders.js"></script>
+  <script src="../js/dispatch.js"></script>
+  <script src="../js/otp.js"></script>
+  <script src="../js/wallet.js"></script>
+  <script src="../js/notifications.js"></script>
+  <script src="../js/app.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const user = Auth.checkAuth(['store', 'admin']);
+      if (!user) return;
+
+      updateStoreDutyUI();
+      loadStoreDashboard();
+    });
+
+    function updateStoreDutyUI() {
+      const users = Storage.get(STORAGE_KEYS.USERS, []);
+      const store = users.find(u => u.id === 'STR-001') || users.find(u => u.role === 'store');
+      const isOnline = store ? store.isOnline !== false : true;
+
+      const btn = document.getElementById('btn-store-duty-toggle');
+      if (btn) {
+        if (isOnline) {
+          btn.className = 'btn btn-sm btn-success';
+          btn.innerHTML = '<i class="fa-solid fa-circle"></i> Online';
+        } else {
+          btn.className = 'btn btn-sm btn-danger';
+          btn.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> Offline (Closed)';
+        }
+      }
+    }
+
+    function toggleStoreOnlineStatus() {
+      const users = Storage.get(STORAGE_KEYS.USERS, []);
+      const storeIndex = users.findIndex(u => u.id === 'STR-001');
+      if (storeIndex === -1) return;
+
+      const current = users[storeIndex].isOnline !== false;
+      users[storeIndex].isOnline = !current;
+      Storage.set(STORAGE_KEYS.USERS, users);
+
+      updateStoreDutyUI();
+
+      if (!users[storeIndex].isOnline) {
+        Notifications.showToast(
+          'Shop Toggled OFFLINE',
+          'Your shop is marked closed. Customers in Town A will be shown "The Neighbors" nearby town delivery popup.',
+          'warning',
+          7000
+        );
+      } else {
+        Notifications.showToast('Shop Toggled ONLINE', 'Your shop is open for local village orders.', 'success', 5000);
+      }
+    }
+
+    function loadStoreDashboard() {
+      const orders = Orders.getStoreOrders();
+      const wallet = Wallet.getStoreWallet();
+
+      const newOrders = orders.filter(o => o.status === ORDER_STATUS.NEW);
+      const prepOrders = orders.filter(o => [ORDER_STATUS.ACCEPTED, ORDER_STATUS.PREPARING].includes(o.status));
+      const waitingOrders = orders.filter(o => [ORDER_STATUS.READY_FOR_PICKUP, ORDER_STATUS.RIDER_ASSIGNED].includes(o.status));
+      const dispatchedOrders = orders.filter(o => o.status === ORDER_STATUS.DISPATCHED);
+
+      document.getElementById('stat-new-orders').textContent = newOrders.length;
+      document.getElementById('incoming-count-badge').textContent = newOrders.length;
+      document.getElementById('stat-preparing-orders').textContent = prepOrders.length;
+      document.getElementById('stat-waiting-orders').textContent = waitingOrders.length;
+      document.getElementById('stat-dispatched-orders').textContent = dispatchedOrders.length;
+      document.getElementById('stat-total-store-orders').textContent = orders.length;
+      document.getElementById('stat-store-balance').textContent = App.formatCurrency(wallet.availableBalance);
+
+      // Render Pipeline Preview Columns
+      const pipelineContainer = document.getElementById('store-pipeline-preview');
+      pipelineContainer.innerHTML = `
+        <!-- Col 1: Incoming New -->
+        <div class="pipeline-col">
+          <div class="pipeline-col-header">
+            <span class="pipeline-col-title text-danger"><i class="fa-solid fa-bell"></i> 1. New Orders</span>
+            <span class="pipeline-count">${newOrders.length}</span>
+          </div>
+          ${newOrders.length === 0 ? '<p style="font-size: 0.8rem; color: var(--text-muted); text-align: center; padding: 1rem;">No new incoming orders</p>' : newOrders.slice(0, 2).map(renderStoreOrderCard).join('')}
+        </div>
+
+        <!-- Col 2: Preparing -->
+        <div class="pipeline-col">
+          <div class="pipeline-col-header">
+            <span class="pipeline-col-title text-warning"><i class="fa-solid fa-box-open"></i> 2. Packing</span>
+            <span class="pipeline-count">${prepOrders.length}</span>
+          </div>
+          ${prepOrders.length === 0 ? '<p style="font-size: 0.8rem; color: var(--text-muted); text-align: center; padding: 1rem;">No orders currently packing</p>' : prepOrders.slice(0, 2).map(renderStoreOrderCard).join('')}
+        </div>
+
+        <!-- Col 3: Ready for Pickup & Dispatched -->
+        <div class="pipeline-col">
+          <div class="pipeline-col-header">
+            <span class="pipeline-col-title text-primary"><i class="fa-solid fa-motorcycle"></i> 3. Rider Handover</span>
+            <span class="pipeline-count">${waitingOrders.length + dispatchedOrders.length}</span>
+          </div>
+          ${[...waitingOrders, ...dispatchedOrders].length === 0 ? '<p style="font-size: 0.8rem; color: var(--text-muted); text-align: center; padding: 1rem;">No orders in rider pickup stage</p>' : [...waitingOrders, ...dispatchedOrders].slice(0, 2).map(renderStoreOrderCard).join('')}
+        </div>
+      `;
+    }
+
+    function renderStoreOrderCard(order) {
+      return `
+        <div class="store-order-card">
+          <div class="store-order-top">
+            <span class="store-order-id">#${order.id}</span>
+            ${App.getStatusBadge(order.status)}
+          </div>
+          <div class="store-order-customer">
+            <strong>${order.customerName}</strong> • ${order.items.length} items
+          </div>
+          <div class="store-items-list">
+            ${order.items.slice(0, 2).map(i => `
+              <div class="store-item-row">
+                <span class="store-item-name">${i.name}</span>
+                <span class="store-item-qty">x${i.qty}</span>
+              </div>
+            `).join('')}
+            ${order.items.length > 2 ? `<span style="font-size: 0.75rem; color: var(--text-muted);">+${order.items.length - 2} more item(s)</span>` : ''}
+          </div>
+          <div class="flex justify-between items-center" style="font-size: 0.85rem; padding-top: 0.5rem; border-top: 1px solid var(--border-light);">
+            <span>Store Net: <strong>${App.formatCurrency(order.storeEarnings)}</strong></span>
+            <a href="order-management.html?orderId=${order.id}" class="btn btn-outline btn-sm">Manage &rarr;</a>
+          </div>
+        </div>
+      `;
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rider Fleet Radar & Live GPS Tracking - instaa</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/admin.css">
+  <style>
+    #admin-radar-map {
+      height: 380px;
+      width: 100%;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-light);
+      z-index: 10;
+    }
+  </style>
+</head>
+<body class="dashboard-layout">
+
+  <!-- Sidebar -->
+  <aside class="dashboard-sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon" style="background: linear-gradient(135deg, #10b981, #059669);">
+        <i class="fa-solid fa-bicycle"></i>
+      </div>
+      <div class="brand-text">
+        <h2>instaa</h2>
+        <span style="font-size: 0.7rem; letter-spacing: 0.5px;">GROCERIES MADE EASIER</span>
+      </div>
+    </div>
+
+    <div class="sidebar-role-badge">
+      <i class="fa-solid fa-lock"></i>
+      <span>Logged in as <strong>Administrator</strong></span>
+    </div>
+
+    <ul class="sidebar-nav">
+      <div class="nav-section-title">Administration</div>
+      <li><a href="admin-dashboard.html"><i class="fa-solid fa-chart-pie"></i> Executive Overview</a></li>
+      <li><a href="orders.html"><i class="fa-solid fa-boxes-stacked"></i> Master Order Log</a></li>
+      <li><a href="riders.html" class="active"><i class="fa-solid fa-motorcycle"></i> Rider Fleet & Radar</a></li>
+      <li><a href="customers.html"><i class="fa-solid fa-users"></i> Customer Database</a></li>
+      <li><a href="store-management.html"><i class="fa-solid fa-store"></i> Store & Commission</a></li>
+      <li><a href="server-health.html"><i class="fa-solid fa-server text-warning"></i> King & Queen HA Monitor</a></li>
+      <li><a href="payments.html"><i class="fa-solid fa-credit-card"></i> Payment Transactions</a></li>
+      <li><a href="reports.html"><i class="fa-solid fa-chart-line"></i> Analytics & Reports</a></li>
+    </ul>
+
+    <div class="sidebar-user">
+      <div class="user-profile-info">
+        <img src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&auto=format&fit=crop&q=80" alt="Admin" class="user-profile-avatar">
+        <div class="user-profile-text">
+          <div class="user-name">Chief Administrator</div>
+          <div class="user-role">Superuser Access</div>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="Auth.logoutUser()" title="Logout">
+        <i class="fa-solid fa-power-off"></i>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dashboard-main">
+    <header class="dashboard-header">
+      <div class="header-left">
+        <button class="mobile-toggle" id="mobile-sidebar-toggle">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="header-title-box">
+          <h1>Rider Fleet & Radar Availability</h1>
+          <p>Real-time online status monitoring, vehicle verification, and duty management</p>
+        </div>
+      </div>
+
+      <div class="header-right flex items-center gap-2">
+        <span id="multi-device-badge" class="badge badge-success"><i class="fa-solid fa-satellite-dish"></i> Live Sync ON</span>
+        <button class="btn btn-outline btn-sm" onclick="TrackingAPI.showMultiDeviceConnectModal('ORD-1000')" title="Connect Mobile Phone via QR">
+          <i class="fa-solid fa-mobile-screen"></i> 📱 Mobile QR
+        </button>
+        <button class="btn btn-primary btn-sm" onclick="setAllRidersOnline()">
+          <i class="fa-solid fa-bolt"></i> Set All Riders Online
+        </button>
+        <button class="btn btn-outline btn-sm" onclick="renderRiderFleet()">
+          <i class="fa-solid fa-rotate"></i> Refresh Fleet
+        </button>
+      </div>
+    </header>
+
+    <div class="dashboard-content">
+
+      <!-- Status Summary Cards -->
+      <div class="metrics-grid">
+        <div class="stat-card">
+          <div class="stat-content">
+            <span class="stat-label">Total Fleet Size</span>
+            <div class="stat-value" id="fleet-total-count">0</div>
+            <div class="stat-hint">Registered delivery partners</div>
+          </div>
+          <div class="stat-icon stat-icon-purple"><i class="fa-solid fa-motorcycle"></i></div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-content">
+            <span class="stat-label">Active on Radar</span>
+            <div class="stat-value text-success" id="fleet-online-count">0</div>
+            <div class="stat-hint"><i class="fa-solid fa-signal text-success"></i> Receiving broadcasts</div>
+          </div>
+          <div class="stat-icon stat-icon-green"><i class="fa-solid fa-satellite-dish"></i></div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-content">
+            <span class="stat-label">Busy on Delivery</span>
+            <div class="stat-value text-primary" id="fleet-busy-count">0</div>
+            <div class="stat-hint">Active in-transit assignments</div>
+          </div>
+          <div class="stat-icon stat-icon-blue"><i class="fa-solid fa-route"></i></div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-content">
+            <span class="stat-label">Duty Paused</span>
+            <div class="stat-value text-muted" id="fleet-offline-count">0</div>
+            <div class="stat-hint">Currently offline</div>
+          </div>
+          <div class="stat-icon stat-icon-amber"><i class="fa-solid fa-pause"></i></div>
+        </div>
+      </div>
+
+      <!-- Real-Time GPS Fleet & Customer Radar Map (Real-Time Tracking API Feature) -->
+      <div class="card" style="margin-bottom: 2rem;">
+        <div class="card-header flex justify-between items-center">
+          <h3 class="card-title">
+            <i class="fa-solid fa-map-location-dot text-primary"></i> Real-Time Dispatch Radar (Riders & Live Customer Pins)
+          </h3>
+          <div class="flex items-center gap-2">
+            <span class="badge badge-success"><i class="fa-solid fa-satellite-dish"></i> Live GPS Feed Active</span>
+            <button class="btn btn-outline btn-sm" onclick="initAdminRadarMap()"><i class="fa-solid fa-rotate"></i> Refresh Radar</button>
+          </div>
+        </div>
+        <div class="card-body" style="padding: 1rem;">
+          <div id="admin-radar-map"></div>
+          <div class="flex justify-between items-center" style="margin-top: 0.75rem; font-size: 0.82rem; color: var(--text-muted); flex-wrap: wrap; gap: 0.5rem;">
+            <div><i class="fa-solid fa-circle text-success"></i> Online Riders • <i class="fa-solid fa-circle text-primary"></i> Stores • <i class="fa-solid fa-circle text-danger"></i> Customer Destinations (Live GPS)</div>
+            <div id="radar-live-indicator"><i class="fa-solid fa-tower-broadcast text-primary"></i> BroadcastChannel Sync Active</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fleet Grid Cards -->
+      <div class="flex justify-between items-center" style="margin-bottom: 1.25rem;">
+        <h3>Registered Delivery Riders</h3>
+        <span class="badge badge-indigo">Multi-Town Fleet</span>
+      </div>
+
+      <div class="rider-fleet-grid" id="rider-fleet-container">
+        <!-- Dynamically rendered -->
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Scripts -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="../js/storage.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/products.js"></script>
+  <script src="../js/cart.js"></script>
+  <script src="../js/orders.js"></script>
+  <script src="../js/dispatch.js"></script>
+  <script src="../js/otp.js"></script>
+  <script src="../js/wallet.js"></script>
+  <script src="../js/notifications.js"></script>
+  <script src="../js/tracking-api.js"></script>
+  <script src="../js/app.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      Auth.checkAuth(['admin']);
+      renderRiderFleet();
+      setTimeout(() => initAdminRadarMap(), 200);
+    });
+
+    function renderRiderFleet() {
+      const users = Storage.get(STORAGE_KEYS.USERS, []);
+      const riders = users.filter(u => u.role === 'rider');
+      const wallets = Storage.get(STORAGE_KEYS.RIDER_WALLETS, {});
+      const allOrders = Orders.getAll();
+
+      const onlineCount = riders.filter(r => r.status === 'ONLINE').length;
+      const offlineCount = riders.length - onlineCount;
+
+      let busyCount = 0;
+      riders.forEach(r => {
+        const active = allOrders.find(o => o.assignedRiderId === r.id && [ORDER_STATUS.RIDER_ASSIGNED, ORDER_STATUS.DISPATCHED].includes(o.status));
+        if (active) busyCount++;
+      });
+
+      document.getElementById('fleet-total-count').textContent = riders.length;
+      document.getElementById('fleet-online-count').textContent = onlineCount;
+      document.getElementById('fleet-busy-count').textContent = busyCount;
+      document.getElementById('fleet-offline-count').textContent = offlineCount;
+
+      const container = document.getElementById('rider-fleet-container');
+      container.innerHTML = riders.map(rider => {
+        const wallet = wallets[rider.id] || { availableBalance: 0, totalEarnings: 0 };
+        const isOnline = rider.status === 'ONLINE';
+        const activeDelivery = allOrders.find(o => o.assignedRiderId === rider.id && [ORDER_STATUS.RIDER_ASSIGNED, ORDER_STATUS.DISPATCHED].includes(o.status));
+
+        return `
+          <div class="rider-fleet-card" style="${isOnline ? 'border-top: 3px solid var(--success);' : 'border-top: 3px solid var(--border-light);'}">
+            <div class="rider-fleet-header">
+              <img src="${rider.avatar || 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80'}" class="rider-fleet-avatar" alt="${rider.name}">
+              <div class="rider-fleet-meta" style="flex: 1;">
+                <h4>${rider.name}</h4>
+                <p><i class="fa-solid fa-motorcycle"></i> ${rider.vehicle || 'Standard Two-Wheeler'}</p>
+                <div class="flex items-center gap-2" style="margin-top: 0.35rem;">
+                  <span class="badge ${isOnline ? 'badge-success' : 'badge-secondary'}">
+                    <i class="fa-solid ${isOnline ? 'fa-signal' : 'fa-power-off'}"></i> ${rider.status}
+                  </span>
+                  <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);">
+                    <i class="fa-solid fa-star text-warning"></i> ${rider.rating || '5.0'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div style="background-color: var(--bg-alt); padding: 0.85rem; border-radius: var(--radius-md); font-size: 0.85rem;">
+              <div class="flex justify-between" style="margin-bottom: 0.35rem;">
+                <span class="text-muted">Rider ID / Email:</span>
+                <strong>${rider.id} • ${rider.email}</strong>
+              </div>
+              <div class="flex justify-between" style="margin-bottom: 0.35rem;">
+                <span class="text-muted">Total Completed Trips:</span>
+                <strong>${rider.totalTrips || 0} deliveries</strong>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-muted">Wallet Balance:</span>
+                <strong style="color: var(--success);">${App.formatCurrency(wallet.availableBalance)}</strong>
+              </div>
+            </div>
+
+            <!-- Active Status / Duty -->
+            <div>
+              ${activeDelivery ? `
+                <div style="background: #eff6ff; border: 1px dashed #3b82f6; border-radius: var(--radius-md); padding: 0.5rem 0.75rem; font-size: 0.8rem; color: #1e40af;">
+                  <i class="fa-solid fa-route"></i> Busy delivering <strong>#${activeDelivery.id}</strong> (${activeDelivery.status})
+                </div>
+              ` : `
+                <div style="font-size: 0.8rem; color: var(--text-muted);">
+                  <i class="fa-solid fa-circle-check text-success"></i> Idle and ready for broadcasts
+                </div>
+              `}
+            </div>
+
+            <!-- Admin Controls -->
+            <div class="flex gap-2" style="margin-top: auto; padding-top: 0.75rem; border-top: 1px solid var(--border-light);">
+              <button class="btn btn-outline btn-sm btn-block" onclick="adminToggleRiderStatus('${rider.id}', ${!isOnline})">
+                <i class="fa-solid fa-power-off"></i> Toggle to ${isOnline ? 'OFFLINE' : 'ONLINE'}
+              </button>
+              <button class="btn btn-primary btn-sm" onclick="App.switchRole('${rider.email}', 'rider')" title="Login as this rider">
+                <i class="fa-solid fa-right-to-bracket"></i> Login
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function adminToggleRiderStatus(riderId, newStatusOnline) {
+      const users = Storage.get(STORAGE_KEYS.USERS, []);
+      const index = users.findIndex(u => u.id === riderId);
+      if (index > -1) {
+        users[index].status = newStatusOnline ? 'ONLINE' : 'OFFLINE';
+        Storage.set(STORAGE_KEYS.USERS, users);
+        Notifications.showToast('Rider Status Updated', `${users[index].name} is now ${users[index].status}.`, 'info');
+        renderRiderFleet();
+      }
+    }
+
+    function setAllRidersOnline() {
+      const users = Storage.get(STORAGE_KEYS.USERS, []);
+      users.forEach(u => {
+        if (u.role === 'rider') u.status = 'ONLINE';
+      });
+      Storage.set(STORAGE_KEYS.USERS, users);
+      Notifications.showToast('All Riders Online', 'All delivery partners are now ONLINE and ready for broadcast dispatch.', 'success');
+      renderRiderFleet();
+      initAdminRadarMap();
+    }
+
+    // Initialize or Refresh Admin Real-Time Fleet & Customer Radar Map
+    function initAdminRadarMap() {
+      const mapContainer = document.getElementById('admin-radar-map');
+      if (!mapContainer || typeof L === 'undefined') return;
+
+      if (window.adminRadarMap) {
+        try {
+          window.adminRadarMap.remove();
+        } catch (e) {}
+      }
+
+      const map = L.map('admin-radar-map', { zoomControl: true }).setView([13.208, 77.715], 13);
+      window.adminRadarMap = map;
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors | Instaa Real-Time Radar',
+        maxZoom: 19
+      }).addTo(map);
+
+      const boundsGroup = [];
+
+      // 1. Plot Stores
+      const stores = [
+        { name: 'FreshMart Superstore (Town A)', lat: 13.1986, lng: 77.7066, town: 'Town A' },
+        { name: 'Town B HyperStore (Town B)', lat: 13.2450, lng: 77.7600, town: 'Town B' }
+      ];
+
+      const storeIcon = L.divIcon({
+        className: 'admin-store-marker',
+        html: '<div style="background: #2563eb; color: white; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 8px rgba(37,99,235,0.4); border: 2px solid white;"><i class="fa-solid fa-store" style="font-size: 15px;"></i></div>',
+        iconSize: [34, 34],
+        iconAnchor: [17, 17]
+      });
+
+      stores.forEach(s => {
+        L.marker([s.lat, s.lng], { icon: storeIcon }).addTo(map)
+          .bindPopup(`<strong><i class="fa-solid fa-store text-primary"></i> ${s.name}</strong><br><small style="color:#64748b;">Central Inventory Hub (${s.town})</small>`);
+        boundsGroup.push([s.lat, s.lng]);
+      });
+
+      // 2. Plot Registered Riders
+      const users = Storage.get(STORAGE_KEYS.USERS, []);
+      const riders = users.filter(u => u.role === 'rider');
+      const allOrders = Orders.getAll();
+      const trackingSessions = Storage.get('instaa_tracking_sessions', {});
+
+      const riderIconOnline = L.divIcon({
+        className: 'admin-rider-marker-online',
+        html: '<div style="background: #10b981; color: white; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 8px rgba(16,185,129,0.4); border: 2px solid white;"><i class="fa-solid fa-motorcycle" style="font-size: 15px;"></i></div>',
+        iconSize: [34, 34],
+        iconAnchor: [17, 17]
+      });
+
+      const riderIconBusy = L.divIcon({
+        className: 'admin-rider-marker-busy',
+        html: '<div style="background: #f59e0b; color: white; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 8px rgba(245,158,11,0.5); border: 2px solid white; animation: pulse 2s infinite;"><i class="fa-solid fa-person-biking" style="font-size: 16px;"></i></div>',
+        iconSize: [34, 34],
+        iconAnchor: [17, 17]
+      });
+
+      riders.forEach((rider, i) => {
+        if (rider.status !== 'ONLINE') return;
+
+        // Check if rider has active delivery session
+        const activeOrder = allOrders.find(o => o.assignedRiderId === rider.id && [ORDER_STATUS.RIDER_ASSIGNED, ORDER_STATUS.DISPATCHED].includes(o.status));
+        let lat = 13.1950 + (i * 0.007);
+        let lng = 77.7050 + (i * 0.008);
+        let isBusy = false;
+        let speed = 0;
+        let eta = 0;
+
+        if (activeOrder && trackingSessions[activeOrder.id]) {
+          const sess = trackingSessions[activeOrder.id];
+          lat = sess.riderLocation.lat;
+          lng = sess.riderLocation.lng;
+          isBusy = true;
+          speed = sess.riderLocation.speedKmh || 32;
+          eta = sess.etaMinutes || 12;
+        }
+
+        const marker = L.marker([lat, lng], { icon: isBusy ? riderIconBusy : riderIconOnline }).addTo(map);
+        marker.bindPopup(`
+          <div style="min-width: 170px;">
+            <div style="font-weight: 700; margin-bottom: 4px;"><i class="fa-solid fa-motorcycle"></i> ${rider.name}</div>
+            <div style="font-size: 0.8rem; color: #64748b; margin-bottom: 6px;">Status: <span class="badge ${isBusy ? 'badge-warning' : 'badge-success'}">${isBusy ? 'En Route' : 'Idle / Ready'}</span></div>
+            ${isBusy ? `<div style="font-size: 0.78rem;"><strong>Order #${activeOrder.id}</strong><br>Speed: <strong>${speed} km/h</strong> • ETA: <strong>~${eta}m</strong></div>` : ''}
+          </div>
+        `);
+        boundsGroup.push([lat, lng]);
+      });
+
+      // 3. Plot Customer Destinations & Live Shared Pins
+      const activeCustomerOrders = allOrders.filter(o => ![ORDER_STATUS.DELIVERED, ORDER_STATUS.CANCELLED].includes(o.status));
+
+      activeCustomerOrders.forEach(ord => {
+        let custLat = ord.customerLat;
+        let custLng = ord.customerLng;
+        const isLiveShared = Boolean(ord.customerLocationShared);
+
+        if (!custLat || !custLng) {
+          custLat = ord.isInterTown ? 13.2450 : 13.2080;
+          custLng = ord.isInterTown ? 77.7600 : 77.7190;
+        }
+
+        const custIcon = L.divIcon({
+          className: 'admin-cust-marker',
+          html: `<div style="background: ${isLiveShared ? '#ef4444' : '#8b5cf6'}; color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 8px rgba(239,68,68,0.5); border: 2px solid white;"><i class="fa-solid ${isLiveShared ? 'fa-location-crosshairs' : 'fa-house-user'}" style="font-size: 14px;"></i></div>`,
+          iconSize: [32, 32],
+          iconAnchor: [16, 16]
+        });
+
+        const custMarker = L.marker([custLat, custLng], { icon: custIcon }).addTo(map);
+        custMarker.bindPopup(`
+          <div style="min-width: 180px;">
+            <div style="font-weight: 700; color: #1e293b; margin-bottom: 4px;">
+              <i class="fa-solid fa-user-tag text-danger"></i> ${ord.customerName}
+            </div>
+            <div style="font-size: 0.78rem; color: #64748b; margin-bottom: 4px;">Order: <strong>#${ord.id}</strong> (${ord.status})</div>
+            <div style="font-size: 0.75rem; margin-bottom: 6px;">
+              ${isLiveShared ? '<span class="badge badge-success"><i class="fa-solid fa-satellite-dish"></i> Live GPS Shared</span>' : '<span class="badge badge-secondary">Default Address Pin</span>'}
+            </div>
+            <div style="font-size: 0.75rem; color: #475569; margin-bottom: 6px;">
+              <strong>Coordinates:</strong> ${Number(custLat).toFixed(5)}, ${Number(custLng).toFixed(5)}
+              ${ord.customerLandmark ? `<br><strong>Landmark:</strong> ${ord.customerLandmark}` : ''}
+            </div>
+            <a href="https://www.google.com/maps/dir/?api=1&destination=${custLat},${custLng}" target="_blank" class="btn btn-outline btn-sm" style="font-size: 0.72rem; padding: 0.25rem 0.5rem; text-decoration: none; display: inline-block;">
+              <i class="fa-brands fa-google"></i> Open in Google Maps
+            </a>
+          </div>
+        `);
+        boundsGroup.push([custLat, custLng]);
+
+        if (isLiveShared) {
+          L.circle([custLat, custLng], {
+            radius: 80,
+            color: '#ef4444',
+            fillColor: '#ef4444',
+            fillOpacity: 0.12,
+            weight: 1.5,
+            dashArray: '3, 6'
+          }).addTo(map);
+        }
+
+        // Draw transit route line if assigned to active session
+        if (trackingSessions[ord.id]) {
+          const sess = trackingSessions[ord.id];
+          const rPos = [sess.riderLocation.lat, sess.riderLocation.lng];
+          L.polyline([rPos, [custLat, custLng]], {
+            color: '#3b82f6',
+            weight: 3,
+            dashArray: '6, 8',
+            opacity: 0.75
+          }).addTo(map);
+        }
+      });
+
+      if (boundsGroup.length > 0) {
+        map.fitBounds(boundsGroup, { padding: [40, 40], maxZoom: 15 });
+      }
+
+      // Attach cross-tab real-time listener if available
+      if ('BroadcastChannel' in window && !window.adminRadarChannelListening) {
+        window.adminRadarChannelListening = true;
+        const bc = new BroadcastChannel('smart_store_channel');
+        bc.onmessage = (event) => {
+          if (event.data && (event.data.key === 'REALTIME_TRACKING_UPDATE' || event.data.type === 'ORDER_STATUS_CHANGED')) {
+            const ind = document.getElementById('radar-live-indicator');
+            if (ind) {
+              ind.innerHTML = `<i class="fa-solid fa-satellite-dish text-success"></i> Updated at ${new Date().toLocaleTimeString()}`;
+            }
+            // Debounced refresh
+            clearTimeout(window.adminRadarDebounce);
+            window.adminRadarDebounce = setTimeout(() => {
+              initAdminRadarMap();
+              renderRiderFleet();
+            }, 800);
+          }
+        };
+      }
+    }
+  </script>
+</body>
+</html>

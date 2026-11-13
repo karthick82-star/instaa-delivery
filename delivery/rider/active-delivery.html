@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Active Delivery Navigation - instaa Rider Partner</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/rider.css">
+  <style>
+    /* In-app map styles */
+    #rider-inapp-map {
+      height: 290px;
+      width: 100%;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-light);
+      z-index: 10;
+    }
+    .idle-monitor-card {
+      background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+      border: 1px solid #e2e8f0;
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+    .idle-countdown {
+      font-size: 1.75rem;
+      font-weight: 800;
+      font-family: monospace;
+      color: #1e293b;
+    }
+    /* Order Reassigned Modal from Image 1 */
+    .reassign-modal-card {
+      background: #ffffff;
+      border-radius: 20px;
+      padding: 2.5rem 2rem;
+      max-width: 360px;
+      text-align: center;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+      animation: popIn 0.3s ease;
+    }
+    @keyframes popIn {
+      from { transform: scale(0.9); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .reassign-icon-box {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: #fee2e2;
+      color: #dc2626;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      margin: 0 auto 1.25rem;
+    }
+  </style>
+</head>
+<body class="dashboard-layout">
+
+  <!-- Sidebar -->
+  <aside class="dashboard-sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon" style="background: linear-gradient(135deg, #10b981, #059669);">
+        <i class="fa-solid fa-motorcycle"></i>
+      </div>
+      <div class="brand-text">
+        <h2>instaa</h2>
+        <span>Rider Partner App</span>
+      </div>
+    </div>
+
+    <div class="sidebar-role-badge">
+      <i class="fa-solid fa-helmet-safety"></i>
+      <span>Logged in as <strong>Rider</strong></span>
+    </div>
+
+    <ul class="sidebar-nav">
+      <div class="nav-section-title">Operations</div>
+      <li><a href="rider-dashboard.html"><i class="fa-solid fa-gauge-high"></i> Dashboard</a></li>
+      <li>
+        <a href="available-orders.html">
+          <i class="fa-solid fa-satellite-dish"></i> Available Requests
+        </a>
+      </li>
+      <li><a href="active-delivery.html" class="active"><i class="fa-solid fa-map-location-dot"></i> Active Delivery</a></li>
+      <li><a href="rider-wallet.html"><i class="fa-solid fa-wallet"></i> My Earnings & Wallet</a></li>
+      <li><a href="rider-history.html"><i class="fa-solid fa-clock-rotate-left"></i> Delivery History</a></li>
+    </ul>
+
+    <div class="sidebar-user">
+      <div class="user-profile-info">
+        <img src="" alt="Rider" class="user-profile-avatar user-avatar" onerror="this.src='https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80'">
+        <div class="user-profile-text">
+          <div class="user-name">Loading...</div>
+          <div class="user-role">Rider Partner</div>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="Auth.logoutUser()" title="Logout">
+        <i class="fa-solid fa-power-off"></i>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dashboard-main">
+    <header class="dashboard-header">
+      <div class="header-left">
+        <button class="mobile-toggle" id="mobile-sidebar-toggle">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="header-title-box">
+          <h1 id="active-title">Active Delivery Navigation</h1>
+          <p id="active-subtitle">In-App Google Map & Two-Stage Verification</p>
+        </div>
+      </div>
+
+      <div class="header-right flex items-center gap-2">
+        <span id="multi-device-badge" class="badge badge-success"><i class="fa-solid fa-satellite-dish"></i> Live Sync ON</span>
+        <button class="btn btn-outline btn-sm" onclick="TrackingAPI.showMultiDeviceConnectModal(activeOrder ? activeOrder.id : 'ORD-1000')" title="Open on Mobile Phone via QR code">
+          <i class="fa-solid fa-mobile-screen"></i> 📱 Mobile QR
+        </button>
+        <button class="btn btn-primary btn-sm" id="btn-toggle-rider-sim" onclick="handleToggleRiderTransitSimulation()">
+          <i class="fa-solid fa-location-crosshairs"></i> Go Live (share my GPS)
+        </button>
+        <span class="badge badge-indigo" id="order-status-badge">RIDER ASSIGNED</span>
+      </div>
+    </header>
+
+    <div class="dashboard-content">
+
+      <!-- If no active order -->
+      <div id="no-active-order-view" style="display: none;">
+        <div class="card" style="text-align: center; padding: 4rem 1.5rem;">
+          <i class="fa-solid fa-motorcycle" style="font-size: 3.5rem; color: #cbd5e1; margin-bottom: 1rem; display: block;"></i>
+          <h3>No Active Delivery In Progress</h3>
+          <p style="color: var(--text-muted); margin: 0.5rem 0 1.5rem;">
+            You have no orders currently assigned. Check the live radar screen to claim available jobs.
+          </p>
+          <a href="available-orders.html" class="btn btn-primary btn-lg">
+            <i class="fa-solid fa-satellite-dish"></i> View Available Requests
+          </a>
+        </div>
+      </div>
+
+      <!-- Main Active Order Workflow Interface -->
+      <div id="active-order-view" style="display: none;">
+        
+        <!-- Top Order Summary Bar -->
+        <div class="card" style="margin-bottom: 1.5rem;">
+          <div class="card-body flex justify-between items-center flex-wrap gap-2">
+            <div>
+              <span style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Current Assignment</span>
+              <h2 style="font-size: 1.5rem;" id="active-order-id">#ORD-XXXX</h2>
+              <div id="active-town-indicator" style="font-size: 0.85rem; color: var(--primary); margin-top: 0.2rem;">
+                <i class="fa-solid fa-map-pin"></i> Town A (Rampur)
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <div style="text-align: right;">
+                <span style="font-size: 0.8rem; color: var(--text-muted);">Trip Payout</span>
+                <div style="font-size: 1.35rem; font-weight: 800; color: var(--success);" id="active-payout">₹40.00</div>
+              </div>
+              <div style="text-align: right;">
+                <span style="font-size: 0.8rem; color: var(--text-muted);">Distance</span>
+                <div style="font-size: 1.35rem; font-weight: 800;" id="active-distance">0.0 KM</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- FEATURE 3: 2-MINUTE IDLE MOTION MONITOR (Visible when RIDER_ASSIGNED) -->
+        <div class="idle-monitor-card" id="idle-monitor-box">
+          <div class="flex justify-between items-center flex-wrap gap-2">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="pulse-indicator"></span>
+                <strong>2-Minute Idle Motion Monitor</strong>
+                <span class="badge badge-success" id="idle-status-badge">Moving Towards Store</span>
+              </div>
+              <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.25rem;">
+                Town traffic rule: If rider remains idle for > 2 mins, order is automatically reassigned.
+              </p>
+            </div>
+            <div class="flex items-center gap-3">
+              <div style="text-align: right;">
+                <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted);">Idle Timeout</span>
+                <div class="idle-countdown" id="idle-timer-display">02:00</div>
+              </div>
+              <div class="flex gap-1">
+                <button class="btn btn-outline btn-sm" onclick="triggerSimulatedMovement()" title="Simulate Moving to Store">
+                  <i class="fa-solid fa-person-walking text-success"></i> Move
+                </button>
+                <button class="btn btn-outline btn-sm" onclick="triggerSimulatedIdle()" title="Simulate Staying Stationary">
+                  <i class="fa-solid fa-pause text-warning"></i> Idle
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- FEATURE 6: BUILT-IN GOOGLE MAP FACILITY -->
+        <div class="card" style="margin-bottom: 1.5rem;">
+          <div class="card-header">
+            <h3 class="card-title">
+              <i class="fa-solid fa-map-location-dot text-primary"></i> Built-in Navigation Map
+            </h3>
+            <div class="flex items-center gap-2">
+              <span class="badge badge-primary" id="map-phase-badge">Heading to Store</span>
+              <button class="btn btn-outline btn-sm" onclick="openExternalGoogleMaps()">
+                <i class="fa-brands fa-google text-primary"></i> Open in Google Maps
+              </button>
+            </div>
+          </div>
+          <div class="card-body" style="padding: 1rem;">
+            <!-- Interactive Leaflet Map loaded with store & customer destination -->
+            <div id="rider-inapp-map"></div>
+            <div class="flex justify-between items-center" style="margin-top: 0.75rem; font-size: 0.82rem; color: var(--text-muted);">
+              <div><i class="fa-solid fa-circle-info text-primary"></i> <span id="map-route-desc">Route: Your Location &rarr; Store Pickup Counter</span></div>
+              <div id="map-eta-label">ETA: ~6 mins</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- STAGES: STORE PICKUP, CUSTOMER DELIVERY, DAMAGED ITEM RETURN -->
+        <div class="active-delivery-stepper">
+          
+          <!-- STAGE 1: STORE PICKUP -->
+          <div class="active-stage-card current" id="stage-1-card">
+            <span class="stage-badge badge-warning" id="stage-1-badge">
+              <i class="fa-solid fa-store"></i> STAGE 1: STORE PICKUP
+            </span>
+            <h3 style="margin-bottom: 0.35rem;" id="stage-1-store-name">FreshMart Superstore</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;" id="stage-1-store-address">
+              108 Market Square, Rampur (Town A)
+            </p>
+
+            <div class="alert-box alert-info" style="margin-bottom: 1rem;">
+              <i class="fa-solid fa-circle-info"></i>
+              <span>Reach store counter. Ask store manager for the <strong>6-digit Store Handover OTP</strong> to confirm pickup.</span>
+            </div>
+
+            <!-- Store OTP Verification Box -->
+            <div id="stage-1-form-area">
+              <label class="form-label" style="font-weight: 700;">Enter 6-Digit Store Handover OTP</label>
+              <div class="otp-input-group">
+                <input type="text" id="store-otp-input" class="otp-box-input" maxlength="6" placeholder="000000" autocomplete="off">
+              </div>
+              <div class="otp-error-msg" id="store-otp-error"></div>
+
+              <div class="flex gap-2" style="margin-top: 1rem;">
+                <button class="btn btn-primary btn-block btn-lg" onclick="handleVerifyStoreOTP()">
+                  <i class="fa-solid fa-check"></i> Verify Handover OTP
+                </button>
+              </div>
+
+              <!-- Quick Demo Helper Autofill -->
+              <div style="text-align: center; margin-top: 1rem;">
+                <button class="btn btn-outline btn-sm" onclick="demoAutofillStoreOTP()" style="font-size: 0.75rem;">
+                  <i class="fa-solid fa-wand-magic-sparkles text-warning"></i> Demo: Autofill Store OTP
+                </button>
+              </div>
+            </div>
+
+            <!-- Completed Stage 1 View -->
+            <div id="stage-1-done-area" style="display: none; text-align: center; padding: 1.5rem 0;">
+              <div style="width: 52px; height: 52px; border-radius: 50%; background: var(--success); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin: 0 auto 0.75rem;">
+                <i class="fa-solid fa-check"></i>
+              </div>
+              <h4 style="color: var(--success-dark);">Store Pickup Confirmed!</h4>
+              <p style="font-size: 0.8rem; color: var(--text-muted);">Store wallet credited. Customer address & map unlocked.</p>
+            </div>
+          </div>
+
+          <!-- STAGE 2: CUSTOMER DELIVERY (CASE I & CASE II) -->
+          <div class="active-stage-card" id="stage-2-card">
+            <span class="stage-badge badge-primary" id="stage-2-badge">
+              <i class="fa-solid fa-location-dot"></i> STAGE 2: CUSTOMER DELIVERY
+            </span>
+            <h3 style="margin-bottom: 0.35rem;" id="stage-2-customer-name">Priya Sharma</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;" id="stage-2-customer-address">
+              Address unlocked upon store pickup
+            </p>
+            <p style="font-size: 0.85rem; color: var(--primary); margin-bottom: 0.75rem;">
+              <i class="fa-solid fa-phone"></i> Contact: <span id="stage-2-customer-phone">+91 98111 22334</span>
+            </p>
+
+            <!-- Customer Shared Live Location Card (Real-Time Tracking API Feature) -->
+            <div id="customer-live-location-box" style="display: none; background: #f0fdf4; border: 1.5px solid #10b981; border-radius: var(--radius-md); padding: 0.85rem; margin-bottom: 1rem;">
+              <div class="flex items-center justify-between" style="margin-bottom: 0.35rem;">
+                <div class="flex items-center gap-2">
+                  <span class="pulse-ring" style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #10b981;"></span>
+                  <strong style="color: #065f46; font-size: 0.95rem;">Customer Shared Live GPS Pin</strong>
+                </div>
+                <span class="badge badge-success" id="rider-cust-gps-badge"><i class="fa-solid fa-satellite-dish"></i> Accurate to ±6m</span>
+              </div>
+              <div style="font-size: 0.8rem; color: #047857; margin-bottom: 0.6rem;">
+                <strong>GPS Coordinates:</strong> <code id="rider-cust-coords" style="font-weight: 700;">13.2085° N, 77.7195° E</code><br>
+                <strong>Landmark:</strong> <span id="rider-cust-landmark" style="font-style: italic;">Near village water tank</span>
+              </div>
+              <button class="btn btn-success btn-sm btn-block" onclick="navigateDirectToCustomerLiveGps()">
+                <i class="fa-brands fa-google"></i> Turn-by-Turn Navigation to Customer Pin
+              </button>
+            </div>
+
+            <div class="alert-box alert-info" style="margin-bottom: 1rem;">
+              <i class="fa-solid fa-shield-halved"></i>
+              <span>Hand goods to customer. If no damage, enter the <strong>Customer Delivery OTP</strong> to complete trip and receive pay.</span>
+            </div>
+
+            <!-- Customer OTP Verification Box (Case i: No Damage) -->
+            <div id="stage-2-form-area">
+              <label class="form-label" style="font-weight: 700;">Enter 6-Digit Customer Delivery OTP</label>
+              <div class="otp-input-group">
+                <input type="text" id="customer-otp-input" class="otp-box-input" maxlength="6" placeholder="000000" autocomplete="off" disabled>
+              </div>
+              <div class="otp-error-msg" id="customer-otp-error"></div>
+
+              <div class="flex gap-2" style="margin-top: 1rem;">
+                <button class="btn btn-success btn-block btn-lg" id="btn-verify-customer-otp" onclick="handleVerifyCustomerOTP()" disabled>
+                  <i class="fa-solid fa-box-check"></i> Case i: Verify OTP & Complete
+                </button>
+              </div>
+
+              <!-- Case ii Option: Customer Reports Damaged Goods -->
+              <div style="margin-top: 1rem; border-top: 1px dashed var(--border-light); padding-top: 1rem;">
+                <button class="btn btn-outline btn-block btn-sm" id="btn-report-damage-rider" onclick="handleRiderReportDamage()" style="color: var(--danger); border-color: var(--danger);" disabled>
+                  <i class="fa-solid fa-triangle-exclamation"></i> Case ii: Customer Reports Damaged Item &rarr;
+                </button>
+              </div>
+
+              <!-- Demo Autofill -->
+              <div style="text-align: center; margin-top: 0.75rem;">
+                <button class="btn btn-outline btn-sm" id="btn-demo-cust-otp" onclick="demoAutofillCustomerOTP()" style="font-size: 0.75rem;" disabled>
+                  <i class="fa-solid fa-wand-magic-sparkles text-warning"></i> Demo: Autofill Customer OTP
+                </button>
+              </div>
+            </div>
+
+            <!-- Completed Stage 2 View -->
+            <div id="stage-2-done-area" style="display: none; text-align: center; padding: 1.5rem 0;">
+              <div style="width: 52px; height: 52px; border-radius: 50%; background: var(--success); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin: 0 auto 0.75rem;">
+                <i class="fa-solid fa-circle-check"></i>
+              </div>
+              <h4 style="color: var(--success-dark);">Order Successfully Delivered!</h4>
+              <p style="font-size: 0.85rem; color: var(--text-muted);">Trip earnings have been credited to your rider wallet via Razorpay.</p>
+              <a href="rider-wallet.html" class="btn btn-primary btn-sm" style="margin-top: 1rem;">View Wallet Balance</a>
+            </div>
+          </div>
+
+          <!-- STAGE 3: DAMAGED ITEM RETURN TO STORE (CASE II) -->
+          <div class="active-stage-card" id="stage-3-return-card" style="display: none; border-color: var(--danger);">
+            <span class="stage-badge badge-danger">
+              <i class="fa-solid fa-rotate-left"></i> STAGE 3: RETURN DAMAGED ITEM TO STORE
+            </span>
+            <h3 style="margin-bottom: 0.35rem; color: var(--danger);">Case ii: Damaged Item Handed Back</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+              Return damaged goods back to <strong id="return-store-name">Store</strong>. Rider pay is withheld until verified.
+            </p>
+
+            <div class="alert-box alert-warning" style="margin-bottom: 1rem;">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+              <span>Deliver damaged item to store manager. Ask manager for the <strong>6-digit Shop Return OTP</strong> to unlock your payout.</span>
+            </div>
+
+            <label class="form-label" style="font-weight: 700;">Enter 6-Digit Shop Return OTP</label>
+            <div class="otp-input-group">
+              <input type="text" id="shop-return-otp-input" class="otp-box-input" maxlength="6" placeholder="000000" autocomplete="off">
+            </div>
+            <div class="otp-error-msg" id="shop-return-otp-error"></div>
+
+            <div class="flex gap-2" style="margin-top: 1rem;">
+              <button class="btn btn-primary btn-block btn-lg" onclick="handleVerifyShopReturnOTP()">
+                <i class="fa-solid fa-check-double"></i> Verify Return OTP & Release Pay
+              </button>
+            </div>
+
+            <div style="text-align: center; margin-top: 1rem;">
+              <button class="btn btn-outline btn-sm" onclick="demoAutofillShopReturnOTP()" style="font-size: 0.75rem;">
+                <i class="fa-solid fa-wand-magic-sparkles text-warning"></i> Demo: Autofill Shop Return OTP
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Goods to Deliver Card -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title"><i class="fa-solid fa-list-check text-primary"></i> Goods to Deliver</h3>
+            <span id="items-count-tag" class="badge badge-secondary">0 items</span>
+          </div>
+          <div class="card-body">
+            <div id="active-items-preview" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem;">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <!-- FEATURE 3: ORDER REASSIGNED MODAL (Exact Screenshot from Image 1) -->
+  <div class="modal-backdrop" id="reassigned-modal" style="display: none; align-items: center; justify-content: center;">
+    <div class="reassign-modal-card">
+      <div class="reassign-icon-box">
+        <i class="fa-solid fa-motorcycle"></i>
+      </div>
+      <h3 style="font-size: 1.45rem; font-weight: 800; color: #1e293b; margin-bottom: 0.5rem;">Order Reassigned</h3>
+      <p style="color: #64748b; font-size: 0.95rem; line-height: 1.5; margin-bottom: 1.75rem;">
+        You have been idle for 2 minutes.<br>
+        Your current order has been reassigned to another rider.
+      </p>
+      <button class="btn btn-primary btn-block btn-lg" onclick="dismissReassignedModal()" style="border-radius: 999px;">
+        DISMISS
+      </button>
+    </div>
+  </div>
+
+  <!-- Delivery Success Modal -->
+  <div class="modal-backdrop" id="delivery-success-modal">
+    <div class="modal-card" style="text-align: center;">
+      <div class="modal-body" style="padding: 2.5rem 2rem;">
+        <div style="width: 80px; height: 80px; border-radius: 50%; background: var(--success-light); color: var(--success); display: flex; align-items: center; justify-content: center; font-size: 3rem; margin: 0 auto 1.25rem;">
+          <i class="fa-solid fa-champagne-glasses"></i>
+        </div>
+        <h2 style="font-size: 1.75rem; margin-bottom: 0.5rem;">Delivery Completed!</h2>
+        <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1.5rem;">
+          Customer OTP verified successfully. No damage found. Your payout has been credited.
+        </p>
+        <div style="background-color: var(--bg-alt); padding: 1.25rem; border-radius: var(--radius-lg); margin-bottom: 1.5rem;">
+          <div class="flex justify-between items-center" style="font-size: 1.1rem; font-weight: 700;">
+            <span>Earnings Credited:</span>
+            <span class="text-success" id="modal-earned-amount">₹40.00</span>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <a href="rider-dashboard.html" class="btn btn-outline" style="flex: 1;">Dashboard</a>
+          <a href="rider-wallet.html" class="btn btn-primary" style="flex: 1;">View Wallet</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="../js/storage.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/products.js"></script>
+  <script src="../js/cart.js"></script>
+  <script src="../js/orders.js"></script>
+  <script src="../js/dispatch.js"></script>
+  <script src="../js/otp.js"></script>
+  <script src="../js/wallet.js"></script>
+  <script src="../js/notifications.js"></script>
+  <script src="../js/tracking-api.js"></script>
+  <script src="../js/app.js"></script>
+
+  <script>
+    let activeOrder = null;
+    let mapInstance = null;
+    let idleCountdownSeconds = 120; // 2 minutes
+    let idleTimer = null;
+    let isRiderMoving = true;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const user = Auth.checkAuth(['rider']);
+      if (!user) return;
+
+      renderActiveDelivery();
+      startIdleCountdown();
+    });
+
+    function renderActiveDelivery() {
+      const user = Auth.getCurrentUser();
+      activeOrder = Dispatch.getActiveDeliveryForRider(user.id);
+
+      const noOrderView = document.getElementById('no-active-order-view');
+      const orderView = document.getElementById('active-order-view');
+
+      if (!activeOrder) {
+        // Check if an order was just reassigned from this rider due to idle timeout
+        const orders = Storage.get(STORAGE_KEYS.ORDERS, []);
+        const reassigned = orders.find(o => o.reassignedFromRiderId === user.id && o.idleReassigned);
+        if (reassigned) {
+          document.getElementById('reassigned-modal').style.display = 'flex';
+        }
+
+        noOrderView.style.display = 'block';
+        orderView.style.display = 'none';
+        return;
+      }
+
+      noOrderView.style.display = 'none';
+      orderView.style.display = 'block';
+
+      // Order info
+      document.getElementById('active-order-id').textContent = `#${activeOrder.id}`;
+      document.getElementById('active-payout').textContent = App.formatCurrency(activeOrder.riderEarnings);
+      document.getElementById('active-distance').textContent = `${activeOrder.distanceKm} KM`;
+      document.getElementById('order-status-badge').innerHTML = App.getStatusBadge(activeOrder.status);
+      document.getElementById('active-town-indicator').innerHTML = `
+        <i class="fa-solid fa-map-pin"></i> ${activeOrder.isInterTown ? 'Inter-Town Assignment: ' + activeOrder.storeName : activeOrder.storeName}
+      `;
+
+      // Store Details
+      document.getElementById('stage-1-store-name').textContent = activeOrder.storeName;
+      document.getElementById('stage-1-store-address').textContent = activeOrder.storeAddress;
+
+      // Customer Details (Hidden until Store OTP verified)
+      if (activeOrder.status === ORDER_STATUS.RIDER_ASSIGNED) {
+        document.getElementById('stage-2-customer-name').textContent = activeOrder.customerName;
+        document.getElementById('stage-2-customer-address').textContent = '🔒 Unlocked upon Store Pickup Handover';
+        document.getElementById('stage-2-customer-phone').textContent = '🔒 Hidden for privacy';
+        document.getElementById('idle-monitor-box').style.display = 'block';
+        document.getElementById('map-phase-badge').textContent = 'Stage 1: Heading to Store';
+        document.getElementById('map-route-desc').textContent = `Route: Rider &rarr; ${activeOrder.storeName}`;
+      } else {
+        document.getElementById('stage-2-customer-name').textContent = activeOrder.customerName;
+        document.getElementById('stage-2-customer-address').textContent = activeOrder.deliveryAddress;
+        document.getElementById('stage-2-customer-phone').textContent = activeOrder.customerPhone || 'N/A';
+        document.getElementById('idle-monitor-box').style.display = 'none'; // Reached store
+        document.getElementById('map-phase-badge').textContent = 'Stage 2: Customer Village Destination';
+        document.getElementById('map-route-desc').textContent = `Route: ${activeOrder.storeName} &rarr; ${activeOrder.deliveryAddress}`;
+
+        // Populate Real-Time Tracking Customer Location Card
+        const session = TrackingAPI.getSession(activeOrder.id);
+        const liveBox = document.getElementById('customer-live-location-box');
+        if (liveBox && session) {
+          liveBox.style.display = 'block';
+          const cust = session.customerLocation;
+          document.getElementById('rider-cust-coords').textContent = `${cust.lat.toFixed(5)}° N, ${cust.lng.toFixed(5)}° E`;
+          document.getElementById('rider-cust-landmark').textContent = cust.landmark || (activeOrder.customerLandmark || 'Doorstep pin');
+          const badge = document.getElementById('rider-cust-gps-badge');
+          if (badge) {
+            badge.className = cust.isLiveShared ? 'badge badge-success' : 'badge badge-warning';
+            badge.innerHTML = cust.isLiveShared 
+              ? '<i class="fa-solid fa-satellite-dish"></i> Live GPS Shared (±6m)' 
+              : '<i class="fa-solid fa-location-pin"></i> Standard Pincode Pin';
+          }
+        }
+      }
+
+      // Items list
+      document.getElementById('items-count-tag').textContent = `${activeOrder.items.length} item(s)`;
+      document.getElementById('active-items-preview').innerHTML = activeOrder.items.map(i => `
+        <div style="background-color: var(--bg-alt); padding: 0.85rem; border-radius: var(--radius-md);">
+          <strong style="font-size: 0.95rem;">${i.name}</strong>
+          <div class="flex justify-between" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">
+            <span>Qty: <strong>${i.qty}</strong></span>
+            <span>Category: ${i.category}</span>
+          </div>
+        </div>
+      `).join('');
+
+      // Stepper & OTP widgets
+      const stage1Card = document.getElementById('stage-1-card');
+      const stage2Card = document.getElementById('stage-2-card');
+      const stage3Card = document.getElementById('stage-3-return-card');
+      const custInput = document.getElementById('customer-otp-input');
+      const custBtn = document.getElementById('btn-verify-customer-otp');
+      const damageBtn = document.getElementById('btn-report-damage-rider');
+      const demoCustBtn = document.getElementById('btn-demo-cust-otp');
+
+      if (activeOrder.status === ORDER_STATUS.RIDER_ASSIGNED) {
+        stage1Card.className = 'active-stage-card current';
+        stage2Card.className = 'active-stage-card';
+        stage3Card.style.display = 'none';
+        document.getElementById('stage-1-form-area').style.display = 'block';
+        document.getElementById('stage-1-done-area').style.display = 'none';
+
+        custInput.disabled = true;
+        custBtn.disabled = true;
+        damageBtn.disabled = true;
+        demoCustBtn.disabled = true;
+      } else if (activeOrder.status === ORDER_STATUS.DISPATCHED) {
+        stage1Card.className = 'active-stage-card completed';
+        stage2Card.className = 'active-stage-card current';
+        stage3Card.style.display = 'none';
+        document.getElementById('stage-1-form-area').style.display = 'none';
+        document.getElementById('stage-1-done-area').style.display = 'block';
+
+        custInput.disabled = false;
+        custBtn.disabled = false;
+        damageBtn.disabled = false;
+        demoCustBtn.disabled = false;
+      } else if (activeOrder.status === 'RETURN_IN_PROGRESS') {
+        // Case ii Active: Damaged item return
+        stage1Card.className = 'active-stage-card completed';
+        stage2Card.className = 'active-stage-card completed';
+        stage3Card.style.display = 'block';
+        stage3Card.className = 'active-stage-card current';
+        document.getElementById('return-store-name').textContent = activeOrder.storeName;
+      }
+
+      // Initialize or update Leaflet Built-in Map
+      setTimeout(() => initBuiltInGoogleMap(), 150);
+    }
+
+    /**
+     * FEATURE 6: IN-APP BUILT-IN GOOGLE MAP & REAL-TIME TRACKING API
+     */
+    function initBuiltInGoogleMap() {
+      if (!activeOrder) return;
+      const mapContainer = document.getElementById('rider-inapp-map');
+      if (!mapContainer) return;
+
+      const session = TrackingAPI.getSession(activeOrder.id);
+
+      // Center coords (Rural Bangalore cluster)
+      const storeCoords = [session.storeLocation.lat, session.storeLocation.lng];
+      const customerCoords = [session.customerLocation.lat, session.customerLocation.lng];
+      const riderCoords = [session.riderLocation.lat, session.riderLocation.lng];
+
+      if (!mapInstance) {
+        mapInstance = L.map('rider-inapp-map').setView(storeCoords, 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '© OpenStreetMap • Instaa Real-Time GPS Tracking API'
+        }).addTo(mapInstance);
+
+        // Subscribe to real-time customer location updates
+        TrackingAPI.subscribe(activeOrder.id, (updatedSession) => {
+          handleRealtimeCustomerLocationUpdate(updatedSession);
+        });
+      }
+
+      // Clear existing layers
+      mapInstance.eachLayer(layer => {
+        if (layer instanceof L.Marker || layer instanceof L.Polyline || layer instanceof L.Circle) {
+          mapInstance.removeLayer(layer);
+        }
+      });
+
+      // Add Store Marker
+      const storeMarker = L.marker(storeCoords).addTo(mapInstance)
+        .bindPopup(`<b>${session.storeLocation.name}</b><br>${session.storeLocation.address}`);
+
+      // Add Rider Marker
+      const riderMarker = L.marker(riderCoords).addTo(mapInstance)
+        .bindPopup(`<b>Your Position (${activeOrder.assignedRiderName})</b><br>${activeOrder.assignedRiderVehicle}`);
+
+      if (activeOrder.status === ORDER_STATUS.DISPATCHED || activeOrder.status === 'RETURN_IN_PROGRESS') {
+        // Customer destination unlocked!
+        const custMarker = L.marker(customerCoords).addTo(mapInstance)
+          .bindPopup(`<b>Destination: ${activeOrder.customerName}</b><br>${session.customerLocation.address}<br><b>GPS:</b> ${session.customerLocation.lat}, ${session.customerLocation.lng}`);
+
+        // Accuracy circle if customer shared live GPS
+        if (session.customerLocation.isLiveShared) {
+          L.circle(customerCoords, {
+            color: '#10b981',
+            fillColor: '#10b981',
+            fillOpacity: 0.15,
+            radius: 40
+          }).addTo(mapInstance);
+        }
+
+        // Route line from store / rider to customer
+        L.polyline([storeCoords, customerCoords], { color: '#2563eb', weight: 4, dashArray: '6, 8' }).addTo(mapInstance);
+        mapInstance.fitBounds([storeCoords, customerCoords], { padding: [40, 40] });
+      } else {
+        // Stage 1: Route from rider to store
+        L.polyline([riderCoords, storeCoords], { color: '#10b981', weight: 4 }).addTo(mapInstance);
+        mapInstance.fitBounds([riderCoords, storeCoords], { padding: [40, 40] });
+      }
+    }
+
+    // React to customer sharing their live GPS coordinates
+    function handleRealtimeCustomerLocationUpdate(session) {
+      if (!session || !activeOrder) return;
+      const cust = session.customerLocation;
+
+      const liveBox = document.getElementById('customer-live-location-box');
+      if (liveBox) {
+        liveBox.style.display = 'block';
+        document.getElementById('rider-cust-coords').textContent = `${cust.lat.toFixed(5)}° N, ${cust.lng.toFixed(5)}° E`;
+        document.getElementById('rider-cust-landmark').textContent = cust.landmark || 'Doorstep pin';
+        const badge = document.getElementById('rider-cust-gps-badge');
+        if (badge) {
+          badge.className = cust.isLiveShared ? 'badge badge-success' : 'badge badge-warning';
+          badge.innerHTML = cust.isLiveShared 
+            ? '<i class="fa-solid fa-satellite-dish"></i> Live GPS Shared (±6m)' 
+            : '<i class="fa-solid fa-location-pin"></i> Standard Pincode Pin';
+        }
+      }
+
+      // Re-render map layers
+      initBuiltInGoogleMap();
+
+      Notifications.showToast(
+        'Customer Location Updated',
+        `Customer shared exact live GPS pin: ${cust.lat.toFixed(4)}° N, ${cust.lng.toFixed(4)}° E (${cust.landmark || 'No landmark'})`,
+        'success',
+        6000
+      );
+    }
+
+    let gpsUserStopped = false;
+    let lastMapRefresh = 0;
+
+    function setLiveButton(on) {
+      const btn = document.getElementById('btn-toggle-rider-sim');
+      if (!btn) return;
+      btn.className = on ? 'btn btn-danger btn-sm' : 'btn btn-primary btn-sm';
+      btn.innerHTML = on
+        ? '<i class="fa-solid fa-circle-dot fa-fade"></i> LIVE - sharing GPS (tap to stop)'
+        : '<i class="fa-solid fa-location-crosshairs"></i> Go Live (share my GPS)';
+    }
+
+    // REAL rider GPS -> customer sees the rider moving, like Zomato
+    function startRealGps(silent) {
+      if (!activeOrder) return;
+      const ok = TrackingAPI.startRiderLiveGps(activeOrder.id, {
+        onMoved: () => { Dispatch.recordRiderMovement(activeOrder.id); },     // resets the idle timer
+        onUpdate: () => {
+          if (Date.now() - lastMapRefresh > 4000) { lastMapRefresh = Date.now(); initBuiltInGoogleMap(); }
+        },
+        onError: (msg) => { gpsUserStopped = true; Notifications.showToast('Live location', msg, 'warning', 7000); setLiveButton(false); }
+      });
+      setLiveButton(ok);
+      if (ok && !silent) Notifications.showToast('You are LIVE', 'The customer can now see your real position on the map.', 'success', 5000);
+    }
+
+    function handleToggleRiderTransitSimulation() {
+      if (!activeOrder) return;
+      if (TrackingAPI.isRiderGpsLive()) {
+        TrackingAPI.stopRiderLiveGps();
+        gpsUserStopped = true;
+        setLiveButton(false);
+        Notifications.showToast('Live location stopped', 'The customer no longer sees your position.', 'info');
+      } else {
+        gpsUserStopped = false;
+        startRealGps(false);
+      }
+    }
+
+    // Demo only (no GPS available): moves the rider along a fake route
+    function runDemoSimulation() {
+      if (!activeOrder) return;
+      TrackingAPI.startLiveRiderSimulation(activeOrder.id, () => initBuiltInGoogleMap());
+      Notifications.showToast('Demo simulation', 'Fake movement is running (not real GPS).', 'info');
+    }
+
+    // Auto-start live sharing as soon as a delivery is assigned (like delivery apps do)
+    setInterval(() => {
+      if (!activeOrder || gpsUserStopped || TrackingAPI.isRiderGpsLive()) return;
+      if (['RIDER_ASSIGNED', 'DISPATCHED'].includes(activeOrder.status)) startRealGps(true);
+    }, 4000);
+
+    // Direct turn-by-turn navigation to customer's live shared pin
+    function navigateDirectToCustomerLiveGps() {
+      if (!activeOrder) return;
+      const session = TrackingAPI.getSession(activeOrder.id);
+      const cust = session.customerLocation;
+      TrackingAPI.openGoogleMapsNavigation(cust.lat, cust.lng, activeOrder.customerName);
+    }
+
+    function openExternalGoogleMaps() {
+      if (!activeOrder) return;
+      const session = TrackingAPI.getSession(activeOrder.id);
+      if (activeOrder.status === ORDER_STATUS.RIDER_ASSIGNED) {
+        TrackingAPI.openGoogleMapsNavigation(session.storeLocation.lat, session.storeLocation.lng, activeOrder.storeName);
+      } else {
+        TrackingAPI.openGoogleMapsNavigation(session.customerLocation.lat, session.customerLocation.lng, activeOrder.customerName);
+      }
+    }
+
+    /**
+     * FEATURE 3: 2-MINUTE IDLE TIMEOUT LOGIC
+     */
+    function startIdleCountdown() {
+      if (idleTimer) clearInterval(idleTimer);
+
+      idleTimer = setInterval(() => {
+        if (!activeOrder || activeOrder.status !== ORDER_STATUS.RIDER_ASSIGNED) return;
+
+        if (!isRiderMoving) {
+          idleCountdownSeconds--;
+          updateIdleTimerUI();
+
+          if (idleCountdownSeconds <= 0) {
+            clearInterval(idleTimer);
+            // Execute automatic reassignment
+            Dispatch.executeIdleReassignment(activeOrder.id, activeOrder.assignedRiderId);
+            document.getElementById('reassigned-modal').style.display = 'flex';
+          }
+        } else {
+          // If moving, countdown stays healthy
+          if (idleCountdownSeconds < 120) idleCountdownSeconds = Math.min(120, idleCountdownSeconds + 1);
+          updateIdleTimerUI();
+        }
+      }, 1000);
+    }
+
+    function updateIdleTimerUI() {
+      const minutes = Math.floor(idleCountdownSeconds / 60);
+      const seconds = idleCountdownSeconds % 60;
+      const formatted = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+      
+      const el = document.getElementById('idle-timer-display');
+      if (el) el.textContent = formatted;
+
+      const badge = document.getElementById('idle-status-badge');
+      if (badge) {
+        if (isRiderMoving) {
+          badge.className = 'badge badge-success';
+          badge.textContent = 'Moving Towards Store';
+        } else {
+          badge.className = 'badge badge-danger';
+          badge.textContent = 'Stationary / Idle (Counting Down)';
+        }
+      }
+    }
+
+    function triggerSimulatedMovement() {
+      isRiderMoving = true;
+      idleCountdownSeconds = 120;
+      updateIdleTimerUI();
+      if (activeOrder) {
+        Dispatch.recordRiderMovement(activeOrder.id);
+        const session = TrackingAPI.getSession(activeOrder.id);
+        // Step forward slightly
+        const newLat = session.riderLocation.lat + 0.0006;
+        const newLng = session.riderLocation.lng + 0.0005;
+        TrackingAPI.updateRiderLocation(activeOrder.id, {
+          lat: newLat,
+          lng: newLng,
+          speedKmh: 36,
+          headingDeg: 45
+        });
+      }
+      Notifications.showToast('GPS Motion Detected', 'Moving towards destination. Idle timer reset and real-time coordinates transmitted.', 'info', 4000);
+    }
+
+    function triggerSimulatedIdle() {
+      isRiderMoving = false;
+      updateIdleTimerUI();
+      if (activeOrder) Dispatch.recordRiderStationary(activeOrder.id);
+      Notifications.showToast('Rider Stationary', 'Simulating stationary rider. 2-minute timeout timer is now ticking down!', 'warning', 4000);
+    }
+
+    function dismissReassignedModal() {
+      document.getElementById('reassigned-modal').style.display = 'none';
+      window.location.href = 'available-orders.html';
+    }
+
+    /**
+     * STAGE 1: VERIFY STORE OTP
+     */
+    function handleVerifyStoreOTP() {
+      const input = document.getElementById('store-otp-input').value.trim();
+      const errBox = document.getElementById('store-otp-error');
+      errBox.style.display = 'none';
+
+      if (!input || input.length !== 6) {
+        errBox.textContent = 'Please enter a 6-digit Store OTP.';
+        errBox.style.display = 'block';
+        return;
+      }
+
+      const res = OTP.verifyStoreOTP(activeOrder.id, input);
+      if (res.success) {
+        Notifications.showToast('Store Pickup Verified!', res.message, 'success');
+        renderActiveDelivery();
+      } else {
+        errBox.textContent = res.message;
+        errBox.style.display = 'block';
+      }
+    }
+
+    /**
+     * STAGE 2: VERIFY CUSTOMER DELIVERY OTP (CASE I)
+     */
+    function handleVerifyCustomerOTP() {
+      const input = document.getElementById('customer-otp-input').value.trim();
+      const errBox = document.getElementById('customer-otp-error');
+      errBox.style.display = 'none';
+
+      if (!input || input.length !== 6) {
+        errBox.textContent = 'Please enter a 6-digit Customer OTP.';
+        errBox.style.display = 'block';
+        return;
+      }
+
+      const res = OTP.verifyCustomerOTP(activeOrder.id, input);
+      if (res.success) {
+        document.getElementById('modal-earned-amount').textContent = App.formatCurrency(activeOrder.riderEarnings);
+        document.getElementById('delivery-success-modal').style.display = 'flex';
+      } else {
+        errBox.textContent = res.message;
+        errBox.style.display = 'block';
+      }
+    }
+
+    /**
+     * CASE II: REPORT DAMAGED ITEM & INITIATE RETURN TO STORE
+     */
+    function handleRiderReportDamage() {
+      const reason = prompt('Specify damage (e.g. Broken packaging, leaked milk, seal tampered):', 'Product leaked in bag during transit');
+      if (!reason) return;
+
+      const res = Orders.reportDamagedItem(activeOrder.id, {
+        damagedItemIds: activeOrder.items.map(i => i.id),
+        reason: reason
+      });
+
+      if (res.success) {
+        Notifications.showToast(
+          'Damage Reported (Case ii)',
+          `Return initiated. Please return goods to ${activeOrder.storeName}. Shop Return OTP: ${res.shopReturnOtp}`,
+          'warning',
+          8000
+        );
+        renderActiveDelivery();
+      }
+    }
+
+    /**
+     * STAGE 3: VERIFY SHOP RETURN OTP (Completes Case ii)
+     */
+    function handleVerifyShopReturnOTP() {
+      const input = document.getElementById('shop-return-otp-input').value.trim();
+      const errBox = document.getElementById('shop-return-otp-error');
+      errBox.style.display = 'none';
+
+      if (!input || input.length !== 6) {
+        errBox.textContent = 'Please enter 6-digit Shop Return OTP.';
+        errBox.style.display = 'block';
+        return;
+      }
+
+      const res = OTP.verifyShopReturnOTP(activeOrder.id, input);
+      if (res.success) {
+        Notifications.showToast('Return Verified! 💰', res.message, 'success', 8000);
+        document.getElementById('modal-earned-amount').textContent = App.formatCurrency(activeOrder.riderEarnings);
+        document.getElementById('delivery-success-modal').style.display = 'flex';
+      } else {
+        errBox.textContent = res.message;
+        errBox.style.display = 'block';
+      }
+    }
+
+    // Demo Autofill Helpers
+    function demoAutofillStoreOTP() {
+      if (activeOrder && activeOrder.storeOtp) {
+        document.getElementById('store-otp-input').value = activeOrder.storeOtp;
+      }
+    }
+
+    function demoAutofillCustomerOTP() {
+      if (activeOrder && activeOrder.customerOtp) {
+        document.getElementById('customer-otp-input').value = activeOrder.customerOtp;
+      }
+    }
+
+    function demoAutofillShopReturnOTP() {
+      if (activeOrder && activeOrder.shopReturnOtp) {
+        document.getElementById('shop-return-otp-input').value = activeOrder.shopReturnOtp;
+      }
+    }
+  </script>
+</body>
+</html>

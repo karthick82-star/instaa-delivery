@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Store Wallet & Ledger - FreshMart Superstore</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/store.css">
+</head>
+<body class="dashboard-layout">
+
+  <!-- Sidebar -->
+  <aside class="dashboard-sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon" style="background: linear-gradient(135deg, #10b981, #059669);">
+        <i class="fa-solid fa-bicycle"></i>
+      </div>
+      <div class="brand-text">
+        <h2>instaa</h2>
+        <span style="font-size: 0.7rem; letter-spacing: 0.5px;">GROCERIES MADE EASIER</span>
+      </div>
+    </div>
+
+    <div class="sidebar-role-badge">
+      <i class="fa-solid fa-shop"></i>
+      <span>Logged in as <strong>Store Manager</strong></span>
+    </div>
+
+    <ul class="sidebar-nav">
+      <div class="nav-section-title">Order Fulfilment</div>
+      <li><a href="store-dashboard.html"><i class="fa-solid fa-gauge-high"></i> Store Dashboard</a></li>
+      <li>
+        <a href="incoming-orders.html">
+          <i class="fa-solid fa-inbox"></i> Incoming Orders
+          <span class="nav-badge" id="incoming-count-badge" style="background-color: var(--danger);">0</span>
+        </a>
+      </li>
+      <li><a href="order-management.html"><i class="fa-solid fa-boxes-packing"></i> Order Management</a></li>
+      <li><a href="store-wallet.html" class="active"><i class="fa-solid fa-wallet"></i> Store Wallet & Ledger</a></li>
+    </ul>
+
+    <div class="sidebar-user">
+      <div class="user-profile-info">
+        <img src="https://images.unsplash.com/photo-1578916171728-46686eac8d58?w=150&auto=format&fit=crop&q=80" alt="Store Manager" class="user-profile-avatar">
+        <div class="user-profile-text">
+          <div class="user-name">FreshMart Store</div>
+          <div class="user-role">Central Metro Outlet</div>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="Auth.logoutUser()" title="Logout">
+        <i class="fa-solid fa-power-off"></i>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dashboard-main">
+    <header class="dashboard-header">
+      <div class="header-left">
+        <button class="mobile-toggle" id="mobile-sidebar-toggle">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="header-title-box">
+          <h1>Store Wallet & Settlement Ledger</h1>
+          <p>Audited merchant payouts credited upon rider pickup verification</p>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <button class="btn btn-warning" onclick="openStorePayoutModal()">
+          <i class="fa-solid fa-building-columns"></i> Request Merchant Settlement
+        </button>
+      </div>
+    </header>
+
+    <div class="dashboard-content">
+
+      <!-- 5 Wallet Metric Cards -->
+      <div class="metrics-grid" style="grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));">
+        <div class="stat-card">
+          <div class="stat-content">
+            <span class="stat-label">Initial Security Deposit</span>
+            <div class="stat-value text-primary" id="store-security-deposit">₹15,000.00</div>
+            <div class="stat-hint"><i class="fa-solid fa-shield-halved text-primary"></i> Case ii Damaged Item Reserve</div>
+          </div>
+          <div class="stat-icon stat-icon-purple"><i class="fa-solid fa-vault"></i></div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-content">
+            <span class="stat-label">Available Balance</span>
+            <div class="stat-value text-success" id="store-available-bal">₹0.00</div>
+            <div class="stat-hint"><i class="fa-solid fa-circle-check text-success"></i> Cleared store funds</div>
+          </div>
+          <div class="stat-icon stat-icon-green"><i class="fa-solid fa-wallet"></i></div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-content">
+            <span class="stat-label">Total Store Earnings</span>
+            <div class="stat-value" id="store-total-bal">₹0.00</div>
+            <div class="stat-hint"><i class="fa-solid fa-arrow-trend-up text-primary"></i> Cumulative net revenue</div>
+          </div>
+          <div class="stat-icon stat-icon-amber"><i class="fa-solid fa-coins"></i></div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-content">
+            <span class="stat-label">Settlement Mode</span>
+            <div class="stat-value" style="font-size: 1.3rem; color: #0284c7;">Razorpay</div>
+            <div class="stat-hint"><i class="fa-solid fa-bolt text-info"></i> Instaa to Store Direct Payout</div>
+          </div>
+          <div class="stat-icon stat-icon-blue"><i class="fa-brands fa-amazon-pay"></i></div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-content">
+            <span class="stat-label">Pending Clearances</span>
+            <div class="stat-value" id="store-pending-bal">₹0.00</div>
+            <div class="stat-hint"><i class="fa-solid fa-hourglass-half text-warning"></i> Orders in packing/dispatch</div>
+          </div>
+          <div class="stat-icon stat-icon-indigo"><i class="fa-solid fa-clock"></i></div>
+        </div>
+      </div>
+
+      <!-- Commission Model Explanation Card (Varying Slabs) -->
+      <div class="card" style="background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%); margin-bottom: 2rem;">
+        <div class="card-body">
+          <div class="flex items-center justify-between" style="margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+            <div class="flex items-center gap-2">
+              <i class="fa-solid fa-calculator text-primary" style="font-size: 1.25rem;"></i>
+              <h4 style="font-size: 1.05rem; margin: 0;">Feature 4: Varying Category Commission Slabs</h4>
+            </div>
+            <span class="badge badge-success"><i class="fa-solid fa-sliders"></i> Admin Controlled Rates</span>
+          </div>
+          <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 1rem;">
+            Customer payments are deposited into <strong>Instaa Admin Bank Account via Google Pay</strong>. Store virtual ledgers are credited after deducting itemized varying category commission rates. If items are damaged (Case ii), compensation is deducted directly from the store's initial security deposit upon rider handover verification.
+          </p>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem;" id="slabs-display-grid">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Store Ledger Transactions Table -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i class="fa-solid fa-receipt text-primary"></i> Store Ledger Transactions
+          </h3>
+          <span class="badge badge-success"><i class="fa-solid fa-lock"></i> Audited Merchant Ledger</span>
+        </div>
+        <div class="card-body" style="padding: 0;">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Transaction ID</th>
+                  <th>Order Reference</th>
+                  <th>Description</th>
+                  <th>Type</th>
+                  <th>Amount</th>
+                  <th>Timestamp</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="store-ledger-tbody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Store Payout Modal -->
+  <div class="modal-backdrop" id="store-payout-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-icon-badge" style="background: var(--warning-light); color: var(--warning-dark);">
+          <i class="fa-solid fa-building-columns"></i>
+        </div>
+        <h3 class="modal-title">Merchant Settlement Request</h3>
+        <p class="modal-subtitle">Transfer available balance to registered business account</p>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Available Store Funds</label>
+          <div style="font-size: 1.5rem; font-weight: 800; color: var(--success);" id="modal-store-avail">₹0.00</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="store-payout-input">Settlement Amount (₹)</label>
+          <input type="number" id="store-payout-input" class="form-control" placeholder="Enter amount" min="100" step="100">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="store-bank-select">Registered Bank Account</label>
+          <select id="store-bank-select" class="form-control">
+            <option value="HDFC">FreshMart Retail Pvt Ltd - HDFC Bank (A/C: •••• 9801)</option>
+            <option value="ICICI">FreshMart Retail Pvt Ltd - ICICI Bank (A/C: •••• 4412)</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeStorePayoutModal()">Cancel</button>
+        <button class="btn btn-warning" onclick="processStorePayout()">
+          <i class="fa-solid fa-check"></i> Process Settlement
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="../js/storage.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/products.js"></script>
+  <script src="../js/cart.js"></script>
+  <script src="../js/orders.js"></script>
+  <script src="../js/dispatch.js"></script>
+  <script src="../js/otp.js"></script>
+  <script src="../js/wallet.js"></script>
+  <script src="../js/notifications.js"></script>
+  <script src="../js/app.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      Auth.checkAuth(['store', 'admin']);
+      renderStoreWalletData();
+    });
+
+    function renderStoreWalletData() {
+      const user = Auth.getCurrentUser();
+      const storeId = (user && user.storeId) ? user.storeId : (user && user.role === 'store' ? user.id : 'STR-001');
+      const users = Storage.get(STORAGE_KEYS.USERS, []);
+      const stores = users.filter(u => u.role === 'store');
+      const currentStore = stores.find(s => s.id === storeId) || stores[0] || {};
+      
+      const wallet = Wallet.getStoreWallet();
+      document.getElementById('store-available-bal').textContent = App.formatCurrency(wallet.availableBalance);
+      document.getElementById('store-total-bal').textContent = App.formatCurrency(wallet.totalEarnings);
+      document.getElementById('store-pending-bal').textContent = App.formatCurrency(wallet.pendingBalance || 0);
+
+      // Security deposit
+      const deposit = currentStore.initialDeposit !== undefined ? currentStore.initialDeposit : 15000;
+      const depositEl = document.getElementById('store-security-deposit');
+      if (depositEl) {
+        depositEl.textContent = App.formatCurrency(deposit);
+      }
+
+      // Render Varying Slabs
+      const config = Storage.get(STORAGE_KEYS.CONFIG, DEFAULT_CONFIG);
+      const slabs = config.commissionSlabs || {};
+      const slabsGrid = document.getElementById('slabs-display-grid');
+      if (slabsGrid) {
+        slabsGrid.innerHTML = `
+          <div style="background: white; border: 1px solid var(--border-light); padding: 0.6rem 0.8rem; border-radius: 8px;">
+            <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase;">Kitchen Staples</div>
+            <div style="font-size: 1.1rem; font-weight: 700; color: #10b981;">${slabs['Kitchen Staples'] || 4}%</div>
+            <div style="font-size: 0.72rem; color: var(--text-muted);">Rice, Atta, Oil (3%-4%)</div>
+          </div>
+          <div style="background: white; border: 1px solid var(--border-light); padding: 0.6rem 0.8rem; border-radius: 8px;">
+            <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase;">Dairy Essentials</div>
+            <div style="font-size: 1.1rem; font-weight: 700; color: #3b82f6;">${slabs['Dairy & Daily Essentials'] || 4}%</div>
+            <div style="font-size: 0.72rem; color: var(--text-muted);">Milk, Paneer (3%-5%)</div>
+          </div>
+          <div style="background: white; border: 1px solid var(--border-light); padding: 0.6rem 0.8rem; border-radius: 8px;">
+            <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase;">Packaged FMCG</div>
+            <div style="font-size: 1.1rem; font-weight: 700; color: #f59e0b;">${slabs['Packaged FMCG & Snacks'] || 7}%</div>
+            <div style="font-size: 0.72rem; color: var(--text-muted);">Biscuits, Chips (6%-8%)</div>
+          </div>
+          <div style="background: white; border: 1px solid var(--border-light); padding: 0.6rem 0.8rem; border-radius: 8px;">
+            <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase;">Personal Care</div>
+            <div style="font-size: 1.1rem; font-weight: 700; color: #8b5cf6;">${slabs['Personal Care & Household'] || 9}%</div>
+            <div style="font-size: 0.72rem; color: var(--text-muted);">Soaps, Detergents (8%-10%)</div>
+          </div>
+        `;
+      }
+
+      // Render Ledger
+      const txns = Wallet.getTransactionsByUserId(storeId);
+      const tbody = document.getElementById('store-ledger-tbody');
+
+      if (txns.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
+              No transactions recorded yet. Handover verified orders will appear here automatically.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = txns.map(t => `
+        <tr>
+          <td><code style="font-weight: 700; color: var(--text-main);">${t.id}</code></td>
+          <td>${t.orderId ? `<strong style="color: var(--primary);">#${t.orderId}</strong>` : '--'}</td>
+          <td>${t.description}</td>
+          <td>
+            <span class="badge ${t.type === 'CREDIT' ? 'badge-success' : 'badge-danger'}">
+              <i class="fa-solid ${t.type === 'CREDIT' ? 'fa-arrow-down-left' : 'fa-arrow-up-right'}"></i> ${t.type}
+            </span>
+          </td>
+          <td>
+            <strong style="color: ${t.type === 'CREDIT' ? 'var(--success)' : 'var(--danger)'};">
+              ${t.type === 'CREDIT' ? '+' : '-'}${App.formatCurrency(t.amount)}
+            </strong>
+          </td>
+          <td>${App.formatDateTime(t.timestamp)}</td>
+          <td><span class="badge badge-success">${t.status}</span></td>
+        </tr>
+      `).join('');
+    }
+
+    function openStorePayoutModal() {
+      const wallet = Wallet.getStoreWallet();
+      document.getElementById('modal-store-avail').textContent = App.formatCurrency(wallet.availableBalance);
+      document.getElementById('store-payout-input').value = Math.min(wallet.availableBalance, 1000);
+      document.getElementById('store-payout-modal').style.display = 'flex';
+    }
+
+    function closeStorePayoutModal() {
+      document.getElementById('store-payout-modal').style.display = 'none';
+    }
+
+    function processStorePayout() {
+      const amount = document.getElementById('store-payout-input').value;
+      const res = Wallet.requestPayout('STR-001', 'store', amount);
+
+      if (res.success) {
+        closeStorePayoutModal();
+        Notifications.showToast('Settlement Initiated', res.message, 'success');
+        renderStoreWalletData();
+      } else {
+        alert(res.message);
+      }
+    }
+  </script>
+</body>
+</html>

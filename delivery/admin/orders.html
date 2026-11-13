@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Master Orders Log & Audit - Admin ERP</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/admin.css">
+</head>
+<body class="dashboard-layout">
+
+  <!-- Sidebar -->
+  <aside class="dashboard-sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon" style="background: linear-gradient(135deg, #7c3aed, #6366f1);">
+        <i class="fa-solid fa-shield-halved"></i>
+      </div>
+      <div class="brand-text">
+        <h2>SmartAdmin</h2>
+        <span>Platform Executive ERP</span>
+      </div>
+    </div>
+
+    <div class="sidebar-role-badge">
+      <i class="fa-solid fa-lock"></i>
+      <span>Logged in as <strong>Administrator</strong></span>
+    </div>
+
+    <ul class="sidebar-nav">
+      <div class="nav-section-title">Administration</div>
+      <li><a href="admin-dashboard.html"><i class="fa-solid fa-chart-pie"></i> Executive Overview</a></li>
+      <li><a href="orders.html" class="active"><i class="fa-solid fa-boxes-stacked"></i> Master Order Log</a></li>
+      <li><a href="riders.html"><i class="fa-solid fa-motorcycle"></i> Rider Fleet & Radar</a></li>
+      <li><a href="customers.html"><i class="fa-solid fa-users"></i> Customer Database</a></li>
+      <li><a href="store-management.html"><i class="fa-solid fa-store"></i> Store & Commission</a></li>
+      <li><a href="server-health.html"><i class="fa-solid fa-server text-warning"></i> King & Queen HA Monitor</a></li>
+      <li><a href="payments.html"><i class="fa-solid fa-credit-card"></i> Payment Transactions</a></li>
+      <li><a href="reports.html"><i class="fa-solid fa-chart-line"></i> Analytics & Reports</a></li>
+    </ul>
+
+    <div class="sidebar-user">
+      <div class="user-profile-info">
+        <img src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&auto=format&fit=crop&q=80" alt="Admin" class="user-profile-avatar">
+        <div class="user-profile-text">
+          <div class="user-name">Chief Administrator</div>
+          <div class="user-role">Superuser Access</div>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="Auth.logoutUser()" title="Logout">
+        <i class="fa-solid fa-power-off"></i>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dashboard-main">
+    <header class="dashboard-header">
+      <div class="header-left">
+        <button class="mobile-toggle" id="mobile-sidebar-toggle">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="header-title-box">
+          <h1>Master Order Lifecycle & Audit Log</h1>
+          <p>Full order inspection with dual OTP verification audit and ledger attribution</p>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <button class="btn btn-primary btn-sm" onclick="App.autoSimulateOrder()">
+          <i class="fa-solid fa-plus"></i> Generate Test Order
+        </button>
+        <button class="btn btn-outline btn-sm" onclick="renderMasterOrders()">
+          <i class="fa-solid fa-rotate"></i> Refresh
+        </button>
+      </div>
+    </header>
+
+    <div class="dashboard-content">
+
+      <!-- Status Filter Tabs -->
+      <div class="category-filter-bar" style="margin-bottom: 1.5rem;">
+        <button class="category-pill active" onclick="filterMasterOrders('ALL', this)">All Orders</button>
+        <button class="category-pill" onclick="filterMasterOrders('NEW', this)">New</button>
+        <button class="category-pill" onclick="filterMasterOrders('PREPARING', this)">Preparing</button>
+        <button class="category-pill" onclick="filterMasterOrders('READY_FOR_PICKUP', this)">Ready for Pickup</button>
+        <button class="category-pill" onclick="filterMasterOrders('RIDER_ASSIGNED', this)">Rider Assigned</button>
+        <button class="category-pill" onclick="filterMasterOrders('DISPATCHED', this)">Dispatched</button>
+        <button class="category-pill" onclick="filterMasterOrders('DELIVERED', this)">Delivered</button>
+        <button class="category-pill" onclick="filterMasterOrders('CANCELLED', this)">Cancelled / Rejected</button>
+      </div>
+
+      <!-- Master Orders Table Card -->
+      <div class="card">
+        <div class="card-body" style="padding: 0;">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Created At</th>
+                  <th>Customer</th>
+                  <th>Store</th>
+                  <th>Assigned Rider</th>
+                  <th>Gross Amount</th>
+                  <th>Store OTP</th>
+                  <th>Customer OTP</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="master-orders-tbody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Detailed Order Lifecycle Audit Modal -->
+  <div class="modal-backdrop" id="lifecycle-modal">
+    <div class="modal-card" style="max-width: 680px;">
+      <div class="modal-header" style="text-align: left; border-bottom: 1px solid var(--border-light);">
+        <div class="flex justify-between items-center">
+          <div>
+            <h3 class="modal-title" id="audit-modal-id">Order #ORD-XXXX Audit</h3>
+            <span style="font-size: 0.8rem; color: var(--text-muted);" id="audit-modal-time"></span>
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="closeLifecycleModal()">&times;</button>
+        </div>
+      </div>
+      <div class="modal-body" id="audit-modal-content" style="max-height: 520px; overflow-y: auto;">
+        <!-- Filled dynamically -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="closeLifecycleModal()">Close Inspector</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="../js/storage.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/products.js"></script>
+  <script src="../js/cart.js"></script>
+  <script src="../js/orders.js"></script>
+  <script src="../js/dispatch.js"></script>
+  <script src="../js/otp.js"></script>
+  <script src="../js/wallet.js"></script>
+  <script src="../js/notifications.js"></script>
+  <script src="../js/app.js"></script>
+
+  <script>
+    let activeFilter = 'ALL';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      Auth.checkAuth(['admin']);
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const targetId = urlParams.get('orderId');
+
+      renderMasterOrders();
+
+      if (targetId) {
+        inspectOrder(targetId);
+      }
+    });
+
+    function filterMasterOrders(filter, btn) {
+      activeFilter = filter;
+      document.querySelectorAll('.category-pill').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      renderMasterOrders();
+    }
+
+    function renderMasterOrders() {
+      let orders = Orders.getAll();
+
+      if (activeFilter !== 'ALL') {
+        if (activeFilter === 'CANCELLED') {
+          orders = orders.filter(o => [ORDER_STATUS.CANCELLED, ORDER_STATUS.REJECTED].includes(o.status));
+        } else if (activeFilter === 'PREPARING') {
+          orders = orders.filter(o => [ORDER_STATUS.ACCEPTED, ORDER_STATUS.PREPARING].includes(o.status));
+        } else {
+          orders = orders.filter(o => o.status === activeFilter);
+        }
+      }
+
+      const tbody = document.getElementById('master-orders-tbody');
+
+      if (orders.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 2.5rem;">No orders found matching filter '${activeFilter}'.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = orders.map(o => `
+        <tr>
+          <td><strong style="color: var(--primary);">#${o.id}</strong></td>
+          <td>${App.formatDateTime(o.createdAt)}</td>
+          <td>
+            <strong>${o.customerName}</strong>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">${o.customerPhone}</div>
+          </td>
+          <td>${o.storeName}</td>
+          <td>
+            ${o.assignedRiderName ? `<span class="badge badge-indigo"><i class="fa-solid fa-motorcycle"></i> ${o.assignedRiderName}</span>` : '<span style="color: var(--text-light);">Unassigned</span>'}
+          </td>
+          <td><strong>${App.formatCurrency(o.total)}</strong></td>
+          <td>
+            ${o.storeOtp ? `<code style="background: #fef3c7; color: #b45309; padding: 0.2rem 0.4rem; border-radius: 4px; font-weight: 700;">${o.storeOtp}</code>` : '<span style="color: var(--text-light);">--</span>'}
+          </td>
+          <td>
+            ${o.customerOtp ? `<code style="background: #dbeafe; color: #1e40af; padding: 0.2rem 0.4rem; border-radius: 4px; font-weight: 700;">${o.customerOtp}</code>` : '<span style="color: var(--text-light);">--</span>'}
+          </td>
+          <td>${App.getStatusBadge(o.status)}</td>
+          <td>
+            <button class="btn btn-outline btn-sm" onclick="inspectOrder('${o.id}')">
+              <i class="fa-solid fa-magnifying-glass"></i> Audit
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function inspectOrder(orderId) {
+      const order = Orders.getById(orderId);
+      if (!order) return;
+
+      document.getElementById('audit-modal-id').textContent = `Order #${order.id} Lifecycle Audit`;
+      document.getElementById('audit-modal-time').textContent = `Created: ${App.formatDateTime(order.createdAt)} • Status: ${order.status}`;
+
+      document.getElementById('audit-modal-content').innerHTML = `
+        <!-- Financial Split Audit -->
+        <div style="background-color: var(--bg-alt); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.5rem;">
+          <h4 style="font-size: 0.85rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.75rem;">1. Financial Revenue Split</h4>
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; text-align: center;">
+            <div style="background: #fff; padding: 0.5rem; border-radius: var(--radius-sm);">
+              <span style="font-size: 0.75rem; color: var(--text-muted);">Customer Paid</span>
+              <div style="font-weight: 800; font-size: 1.05rem;">${App.formatCurrency(order.total)}</div>
+            </div>
+            <div style="background: #fff; padding: 0.5rem; border-radius: var(--radius-sm);">
+              <span style="font-size: 0.75rem; color: var(--text-muted);">Store Credit</span>
+              <div style="font-weight: 800; font-size: 1.05rem; color: var(--warning-dark);">${App.formatCurrency(order.storeEarnings)}</div>
+            </div>
+            <div style="background: #fff; padding: 0.5rem; border-radius: var(--radius-sm);">
+              <span style="font-size: 0.75rem; color: var(--text-muted);">Rider Delivery</span>
+              <div style="font-weight: 800; font-size: 1.05rem; color: var(--success);">${App.formatCurrency(order.riderEarnings)}</div>
+            </div>
+            <div style="background: #fff; padding: 0.5rem; border-radius: var(--radius-sm);">
+              <span style="font-size: 0.75rem; color: var(--text-muted);">Platform Fee</span>
+              <div style="font-weight: 800; font-size: 1.05rem; color: var(--purple);">${App.formatCurrency(order.platformEarnings)}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dual OTP Verification Box -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+          <div style="border: 2px dashed #f59e0b; background: #fffbeb; padding: 1rem; border-radius: var(--radius-md); text-align: center;">
+            <span style="font-size: 0.75rem; font-weight: 800; color: #92400e; text-transform: uppercase;">Stage 1: Store Handover OTP</span>
+            <div style="font-size: 2rem; font-weight: 800; font-family: monospace; color: #b45309; margin: 0.25rem 0;">${order.storeOtp || '------'}</div>
+            <span style="font-size: 0.75rem; color: #92400e;">
+              ${order.storeWalletCredited ? '✅ Verified & Store Credited' : 'Pending rider pickup'}
+            </span>
+          </div>
+
+          <div style="border: 2px dashed #3b82f6; background: #eff6ff; padding: 1rem; border-radius: var(--radius-md); text-align: center;">
+            <span style="font-size: 0.75rem; font-weight: 800; color: #1e40af; text-transform: uppercase;">Stage 2: Customer Delivery OTP</span>
+            <div style="font-size: 2rem; font-weight: 800; font-family: monospace; color: #1d4ed8; margin: 0.25rem 0;">${order.customerOtp || '------'}</div>
+            <span style="font-size: 0.75rem; color: #1e40af;">
+              ${order.riderWalletCredited ? '✅ Verified & Rider Credited' : 'Pending customer delivery'}
+            </span>
+          </div>
+        </div>
+
+        <!-- Timeline Log -->
+        <h4 style="font-size: 0.9rem; margin-bottom: 0.75rem;"><i class="fa-solid fa-list-check text-primary"></i> Stage Progression Audit Trail:</h4>
+        <div class="tracking-stepper" style="padding: 0.5rem 0;">
+          ${(order.timeline || []).map(t => `
+            <div class="step-item completed">
+              <div class="step-circle" style="width: 32px; height: 32px; font-size: 0.8rem;">
+                <i class="fa-solid fa-check"></i>
+              </div>
+              <div class="step-content">
+                <h5 style="font-size: 0.9rem;">${t.status.replace(/_/g, ' ')}</h5>
+                <p style="font-size: 0.8rem;">${t.note}</p>
+                <span class="step-time">${App.formatDateTime(t.timestamp)}</span>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+
+      document.getElementById('lifecycle-modal').style.display = 'flex';
+    }
+
+    function closeLifecycleModal() {
+      document.getElementById('lifecycle-modal').style.display = 'none';
+    }
+  </script>
+</body>
+</html>

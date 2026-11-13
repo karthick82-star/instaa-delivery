@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reports & Analytics - Admin ERP</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/admin.css">
+</head>
+<body class="dashboard-layout">
+
+  <!-- Sidebar -->
+  <aside class="dashboard-sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon" style="background: linear-gradient(135deg, #7c3aed, #6366f1);">
+        <i class="fa-solid fa-shield-halved"></i>
+      </div>
+      <div class="brand-text">
+        <h2>SmartAdmin</h2>
+        <span>Platform Executive ERP</span>
+      </div>
+    </div>
+
+    <div class="sidebar-role-badge">
+      <i class="fa-solid fa-lock"></i>
+      <span>Logged in as <strong>Administrator</strong></span>
+    </div>
+
+    <ul class="sidebar-nav">
+      <div class="nav-section-title">Administration</div>
+      <li><a href="admin-dashboard.html"><i class="fa-solid fa-chart-pie"></i> Executive Overview</a></li>
+      <li><a href="orders.html"><i class="fa-solid fa-boxes-stacked"></i> Master Order Log</a></li>
+      <li><a href="riders.html"><i class="fa-solid fa-motorcycle"></i> Rider Fleet & Radar</a></li>
+      <li><a href="customers.html"><i class="fa-solid fa-users"></i> Customer Database</a></li>
+      <li><a href="store-management.html"><i class="fa-solid fa-store"></i> Store & Commission</a></li>
+      <li><a href="server-health.html"><i class="fa-solid fa-server text-warning"></i> King & Queen HA Monitor</a></li>
+      <li><a href="payments.html"><i class="fa-solid fa-credit-card"></i> Payment Transactions</a></li>
+      <li><a href="reports.html" class="active"><i class="fa-solid fa-chart-line"></i> Analytics & Reports</a></li>
+    </ul>
+
+    <div class="sidebar-user">
+      <div class="user-profile-info">
+        <img src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&auto=format&fit=crop&q=80" alt="Admin" class="user-profile-avatar">
+        <div class="user-profile-text">
+          <div class="user-name">Chief Administrator</div>
+          <div class="user-role">Superuser Access</div>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="Auth.logoutUser()" title="Logout">
+        <i class="fa-solid fa-power-off"></i>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dashboard-main">
+    <header class="dashboard-header">
+      <div class="header-left">
+        <button class="mobile-toggle" id="mobile-sidebar-toggle">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="header-title-box">
+          <h1>Analytics & Operational Reports</h1>
+          <p>Exportable operational data, fulfillment performance, and financial velocity</p>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <button class="btn btn-primary btn-sm" onclick="exportDataCSV('orders')">
+          <i class="fa-solid fa-file-arrow-down"></i> Export Orders (CSV)
+        </button>
+        <button class="btn btn-outline btn-sm" onclick="exportDataCSV('transactions')">
+          <i class="fa-solid fa-download"></i> Export Ledger (CSV)
+        </button>
+      </div>
+    </header>
+
+    <div class="dashboard-content">
+
+      <!-- Executive Performance Cards -->
+      <div class="metrics-grid">
+        <div class="stat-card">
+          <div class="stat-content">
+            <span class="stat-label">Average Delivery Time</span>
+            <div class="stat-value text-primary">18.4 Mins</div>
+            <div class="stat-hint"><i class="fa-solid fa-stopwatch text-success"></i> 96% Under 25 mins SLA</div>
+          </div>
+          <div class="stat-icon stat-icon-blue"><i class="fa-solid fa-bolt"></i></div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-content">
+            <span class="stat-label">Store Handover Speed</span>
+            <div class="stat-value text-warning">6.8 Mins</div>
+            <div class="stat-hint">Accept to READY_FOR_PICKUP</div>
+          </div>
+          <div class="stat-icon stat-icon-amber"><i class="fa-solid fa-boxes-packing"></i></div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-content">
+            <span class="stat-label">Rider Claim Latency</span>
+            <div class="stat-value text-success">38 Secs</div>
+            <div class="stat-hint">Broadcast to double-confirm</div>
+          </div>
+          <div class="stat-icon stat-icon-green"><i class="fa-solid fa-satellite-dish"></i></div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-content">
+            <span class="stat-label">Dual OTP Accuracy</span>
+            <div class="stat-value text-purple">99.8%</div>
+            <div class="stat-hint">First-time OTP match rate</div>
+          </div>
+          <div class="stat-icon stat-icon-purple"><i class="fa-solid fa-shield-check"></i></div>
+        </div>
+      </div>
+
+      <!-- Rider Performance Ranking Card -->
+      <div class="card" style="margin-bottom: 2rem;">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i class="fa-solid fa-trophy text-warning"></i> Top Performing Rider Fleet Rankings
+          </h3>
+          <span class="badge badge-success">Live Performance Index</span>
+        </div>
+        <div class="card-body" style="padding: 0;">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Rider Name</th>
+                  <th>Vehicle Info</th>
+                  <th>Completed Trips</th>
+                  <th>Customer Rating</th>
+                  <th>Total Earned</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="rider-rankings-tbody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Store Volume Distribution -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i class="fa-solid fa-store text-primary"></i> FreshMart Superstore Sales & Commission Summary
+          </h3>
+          <span class="badge badge-primary">Active Outlet (STR-001)</span>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Metric Description</th>
+                  <th>Calculated Total</th>
+                  <th>Attribution Note</th>
+                </tr>
+              </thead>
+              <tbody id="store-financial-summary-tbody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Scripts -->
+  <script src="../js/storage.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/products.js"></script>
+  <script src="../js/cart.js"></script>
+  <script src="../js/orders.js"></script>
+  <script src="../js/dispatch.js"></script>
+  <script src="../js/otp.js"></script>
+  <script src="../js/wallet.js"></script>
+  <script src="../js/notifications.js"></script>
+  <script src="../js/app.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      Auth.checkAuth(['admin']);
+      renderReports();
+    });
+
+    function renderReports() {
+      const users = Storage.get(STORAGE_KEYS.USERS, []);
+      const riders = users.filter(u => u.role === 'rider');
+      const wallets = Storage.get(STORAGE_KEYS.RIDER_WALLETS, {});
+      const orders = Orders.getAll();
+
+      // Sort riders by completed trips or earnings
+      riders.sort((a, b) => (b.totalTrips || 0) - (a.totalTrips || 0));
+
+      const riderTbody = document.getElementById('rider-rankings-tbody');
+      riderTbody.innerHTML = riders.map((r, idx) => {
+        const w = wallets[r.id] || { totalEarnings: 0 };
+        return `
+          <tr>
+            <td><strong>#${idx + 1}</strong></td>
+            <td>
+              <div class="flex items-center gap-2">
+                <img src="${r.avatar || 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80'}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">
+                <strong>${r.name}</strong>
+              </div>
+            </td>
+            <td>${r.vehicle || 'Electric Bike'}</td>
+            <td><strong>${r.totalTrips || 0} trips</strong></td>
+            <td><i class="fa-solid fa-star text-warning"></i> ${(r.rating || 5.0).toFixed(1)}</td>
+            <td><strong style="color: var(--success);">${App.formatCurrency(w.totalEarnings)}</strong></td>
+            <td><span class="badge ${r.status === 'ONLINE' ? 'badge-success' : 'badge-secondary'}">${r.status}</span></td>
+          </tr>
+        `;
+      }).join('');
+
+      // Store summary
+      const subtotalSum = orders.reduce((sum, o) => sum + (o.subtotal || 0), 0);
+      const commissionSum = orders.reduce((sum, o) => sum + (o.platformEarnings || 0), 0);
+      const storeNetSum = orders.reduce((sum, o) => sum + (o.storeEarnings || 0), 0);
+      const riderFeeSum = orders.reduce((sum, o) => sum + (o.riderEarnings || 0), 0);
+
+      const storeTbody = document.getElementById('store-financial-summary-tbody');
+      storeTbody.innerHTML = `
+        <tr>
+          <td><strong>Customer Gross Goods Volume</strong></td>
+          <td><strong style="font-size: 1.1rem;">${App.formatCurrency(subtotalSum)}</strong></td>
+          <td>Total value of items ordered across all batches</td>
+        </tr>
+        <tr>
+          <td><strong>Store Net Earnings (Credited)</strong></td>
+          <td><strong style="font-size: 1.1rem; color: var(--success);">${App.formatCurrency(storeNetSum)}</strong></td>
+          <td>Direct merchant earnings transferred to store wallet</td>
+        </tr>
+        <tr>
+          <td><strong>Rider Delivery Earnings Distributed</strong></td>
+          <td><strong style="font-size: 1.1rem; color: var(--primary);">${App.formatCurrency(riderFeeSum)}</strong></td>
+          <td>Fulfilment fees disbursed to active riders upon Customer OTP</td>
+        </tr>
+        <tr>
+          <td><strong>Marketplace Commission Retained (10% + fees)</strong></td>
+          <td><strong style="font-size: 1.1rem; color: var(--purple);">${App.formatCurrency(commissionSum)}</strong></td>
+          <td>Platform gross operating margin</td>
+        </tr>
+      `;
+    }
+
+    function exportDataCSV(type) {
+      let data = [];
+      let filename = 'export.csv';
+
+      if (type === 'orders') {
+        const orders = Orders.getAll();
+        data = orders.map(o => ({
+          order_id: o.id,
+          customer: o.customerName,
+          status: o.status,
+          total: o.total,
+          store_net: o.storeEarnings,
+          rider_net: o.riderEarnings,
+          created_at: o.createdAt
+        }));
+        filename = `orders_export_${Date.now()}.csv`;
+      } else {
+        data = Wallet.getAllTransactions();
+        filename = `transactions_export_${Date.now()}.csv`;
+      }
+
+      if (data.length === 0) {
+        alert('No records available to export.');
+        return;
+      }
+
+      // Generate CSV string
+      const headers = Object.keys(data[0]);
+      const csvRows = [
+        headers.join(','),
+        ...data.map(row => headers.map(fieldName => JSON.stringify(row[fieldName] || '')).join(','))
+      ];
+      const csvString = csvRows.join('\r\n');
+
+      // Trigger browser file download
+      const blob = new Blob([csvString], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.setAttribute('href', url);
+      a.setAttribute('download', filename);
+      a.click();
+      window.URL.revokeObjectURL(url);
+
+      Notifications.showToast('CSV Exported!', `Downloaded ${filename} to your device.`, 'success');
+    }
+  </script>
+</body>
+</html>

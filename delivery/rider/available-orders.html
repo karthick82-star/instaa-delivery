@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Available Delivery Requests - Smart Store Delivery</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/rider.css">
+</head>
+<body class="dashboard-layout">
+
+  <!-- Sidebar -->
+  <aside class="dashboard-sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon" style="background: linear-gradient(135deg, #10b981, #059669);">
+        <i class="fa-solid fa-motorcycle"></i>
+      </div>
+      <div class="brand-text">
+        <h2>instaa</h2>
+        <span>Rider Partner App</span>
+      </div>
+    </div>
+
+    <div class="sidebar-role-badge">
+      <i class="fa-solid fa-helmet-safety"></i>
+      <span>Logged in as <strong>Rider</strong></span>
+    </div>
+
+    <ul class="sidebar-nav">
+      <div class="nav-section-title">Operations</div>
+      <li><a href="rider-dashboard.html"><i class="fa-solid fa-gauge-high"></i> Dashboard</a></li>
+      <li>
+        <a href="available-orders.html" class="active">
+          <i class="fa-solid fa-satellite-dish"></i> Available Requests
+          <span class="nav-badge" id="available-count-badge">0</span>
+        </a>
+      </li>
+      <li><a href="active-delivery.html"><i class="fa-solid fa-map-location-dot"></i> Active Delivery</a></li>
+      <li><a href="rider-wallet.html"><i class="fa-solid fa-wallet"></i> My Earnings & Wallet</a></li>
+      <li><a href="rider-history.html"><i class="fa-solid fa-clock-rotate-left"></i> Delivery History</a></li>
+    </ul>
+
+    <div class="sidebar-user">
+      <div class="user-profile-info">
+        <img src="" alt="Rider" class="user-profile-avatar user-avatar" onerror="this.src='https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80'">
+        <div class="user-profile-text">
+          <div class="user-name">Loading...</div>
+          <div class="user-role">Rider Partner</div>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="Auth.logoutUser()" title="Logout">
+        <i class="fa-solid fa-power-off"></i>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dashboard-main">
+    <header class="dashboard-header">
+      <div class="header-left">
+        <button class="mobile-toggle" id="mobile-sidebar-toggle">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="header-title-box">
+          <h1>Live Broadcast Radar</h1>
+          <p>Real-time delivery requests dispatched to online riders</p>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <button class="btn btn-outline btn-sm" onclick="renderAvailableOrders()">
+          <i class="fa-solid fa-rotate"></i> Refresh Radar
+        </button>
+      </div>
+    </header>
+
+    <div class="dashboard-content">
+
+      <!-- Testing Guide Alert -->
+      <div class="alert-box alert-info" style="margin-bottom: 2rem;">
+        <i class="fa-solid fa-circle-nodes" style="font-size: 1.5rem;"></i>
+        <div>
+          <strong>Multi-Rider Concurrency Testing Instructions:</strong><br>
+          Open this page as <em>Rider 1 (Alex)</em> in one browser tab and as <em>Rider 2 (Ben)</em> in another tab (or Incognito). When a store marks an order <code>READY_FOR_PICKUP</code>, both riders see the same request card simultaneously. Only the first rider who completes the double-confirmation successfully claims the delivery!
+        </div>
+      </div>
+
+      <!-- Radar Animation Box -->
+      <div class="radar-screen-box">
+        <div class="radar-sonar-rings">
+          <div class="sonar-ring"></div>
+          <div class="sonar-ring"></div>
+          <div class="sonar-ring"></div>
+          <div class="sonar-center-icon">
+            <i class="fa-solid fa-satellite-dish"></i>
+          </div>
+        </div>
+        <h3 style="color: #fff; margin-bottom: 0.25rem;">Real-Time Dispatch Radar Active</h3>
+        <p style="color: #94a3b8; font-size: 0.9rem;" id="radar-live-status">
+          Listening for store handover requests in your operating radius...
+        </p>
+      </div>
+
+      <!-- Available Requests List -->
+      <div class="flex justify-between items-center" style="margin-bottom: 1.25rem;">
+        <h3>Incoming Requests (<span id="orders-available-count">0</span>)</h3>
+        <span class="badge badge-success"><i class="fa-solid fa-bolt"></i> Instant Double-Confirm Claim</span>
+      </div>
+
+      <div id="available-orders-container">
+        <!-- Dynamically rendered -->
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Double Confirmation Modal is dynamically injected by Dispatch.openAcceptanceModal -->
+
+  <!-- Scripts -->
+  <script src="../js/storage.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/products.js"></script>
+  <script src="../js/cart.js"></script>
+  <script src="../js/orders.js"></script>
+  <script src="../js/dispatch.js"></script>
+  <script src="../js/otp.js"></script>
+  <script src="../js/wallet.js"></script>
+  <script src="../js/notifications.js"></script>
+  <script src="../js/app.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const user = Auth.checkAuth(['rider']);
+      if (!user) return;
+
+      renderAvailableOrders();
+    });
+
+    function renderAvailableOrders() {
+      const user = Auth.getCurrentUser();
+      const container = document.getElementById('available-orders-container');
+      const countEl = document.getElementById('orders-available-count');
+      const badge = document.getElementById('available-count-badge');
+
+      // Check if rider is offline
+      if (user.status !== 'ONLINE') {
+        countEl.textContent = '0';
+        badge.textContent = '0';
+        document.getElementById('radar-live-status').textContent = 'Duty paused. You are currently OFFLINE.';
+        container.innerHTML = `
+          <div class="card" style="text-align: center; padding: 3rem 1rem;">
+            <i class="fa-solid fa-toggle-off" style="font-size: 3rem; color: #cbd5e1; margin-bottom: 1rem; display: block;"></i>
+            <h3>You are Currently Offline</h3>
+            <p style="color: var(--text-muted); margin: 0.5rem 0 1.5rem;">Switch your duty toggle ON in the dashboard to start receiving incoming orders.</p>
+            <a href="rider-dashboard.html" class="btn btn-success">Go to Dashboard & Go Online</a>
+          </div>
+        `;
+        return;
+      }
+
+      const available = Dispatch.getAvailableOrdersForRiders(user.id);
+      countEl.textContent = available.length;
+      badge.textContent = available.length;
+
+      if (available.length === 0) {
+        document.getElementById('radar-live-status').textContent = 'Scanning operating village radius. No pending pickups.';
+        container.innerHTML = `
+          <div class="card" style="text-align: center; padding: 4rem 1.5rem;">
+            <i class="fa-solid fa-radar" style="font-size: 3.5rem; color: #cbd5e1; margin-bottom: 1rem; display: block;"></i>
+            <h3>No Active Broadcasts Right Now</h3>
+            <p style="color: var(--text-muted); max-width: 480px; margin: 0.5rem auto 1.5rem;">
+              Orders marked <strong>READY_FOR_PICKUP</strong> by local village stores will appear here automatically in real time.
+            </p>
+            <button class="btn btn-outline" onclick="App.autoSimulateOrder()">
+              <i class="fa-solid fa-wand-magic-sparkles text-warning"></i> Generate Simulated Test Order
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      document.getElementById('radar-live-status').textContent = `🔥 ${available.length} active delivery request(s) in radar range!`;
+
+      container.innerHTML = available.map(order => {
+        const isLocalPriority = (order.storeTownId || 'TOWN-01') === (user.townId || 'TOWN-01');
+
+        return `
+          <div class="delivery-request-card" id="req-card-${order.id}" style="${isLocalPriority ? 'border-left: 4px solid var(--success);' : 'border-left: 4px solid var(--warning);'}">
+            <div class="request-header">
+              <div>
+                <span class="request-id-badge">Request #${order.id}</span>
+                ${isLocalPriority 
+                  ? `<span class="badge badge-success" style="margin-left: 0.5rem;"><i class="fa-solid fa-house"></i> Local Town Priority</span>`
+                  : `<span class="badge badge-warning" style="margin-left: 0.5rem;"><i class="fa-solid fa-truck-ramp-box"></i> Neighbor Town Fallback</span>`
+                }
+                <span style="font-size: 0.8rem; color: var(--text-muted); margin-left: 0.5rem;">
+                  <i class="fa-solid fa-clock"></i> Ready ${App.timeAgo(order.readyAt || order.createdAt)}
+                </span>
+              </div>
+              <span class="request-payout-badge">
+                <i class="fa-solid fa-wallet"></i> Earn ₹${order.riderEarnings.toFixed(2)}
+              </span>
+            </div>
+
+            <div class="request-route-flow">
+              <!-- Pickup -->
+              <div class="route-stop">
+                <div class="stop-marker pickup">
+                  <i class="fa-solid fa-store"></i>
+                </div>
+                <div class="stop-details">
+                  <h5>${order.storeName} (Store Pickup)</h5>
+                  <p>${order.storeAddress} • Handover OTP required at counter</p>
+                </div>
+              </div>
+
+              <!-- Dropoff -->
+              <div class="route-stop">
+                <div class="stop-marker drop">
+                  <i class="fa-solid fa-location-dot"></i>
+                </div>
+                <div class="stop-details">
+                  <h5>${order.customerName} (Village Destination)</h5>
+                  <p>${order.isInterTown ? 'Inter-Town Delivery' : 'Local Village Doorstep'} • Customer OTP required upon delivery</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="request-metrics-row">
+              <div class="metric-pill">
+                <i class="fa-solid fa-route"></i>
+                <span>Distance: <strong>${order.distanceKm} KM</strong></span>
+              </div>
+              <div class="metric-pill">
+                <i class="fa-solid fa-stopwatch"></i>
+                <span>Est. Time: <strong>~${order.estimatedMinutes} Mins</strong></span>
+              </div>
+              <div class="metric-pill">
+                <i class="fa-solid fa-bag-shopping"></i>
+                <span>Items: <strong>${order.items.length} units</strong></span>
+              </div>
+            </div>
+
+            <div class="flex justify-between items-center flex-wrap gap-2">
+              <div style="font-size: 0.8rem; color: var(--text-muted);">
+                <i class="fa-solid fa-stopwatch text-warning"></i> <strong>2-Min Idle Rule:</strong> Start moving to store after acceptance to prevent auto-reassignment
+              </div>
+              <button class="btn btn-success btn-lg" onclick="Dispatch.openAcceptanceModal('${order.id}', '${user.id}')">
+                <i class="fa-solid fa-check-circle"></i> Accept Delivery
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  </script>
+</body>
+</html>

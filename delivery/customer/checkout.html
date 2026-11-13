@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkout & GPay Handshake - instaa</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/customer.css">
+  <style>
+    /* Google Pay App-to-App Handshake Simulation Modal */
+    .gpay-modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: 1rem;
+    }
+    .gpay-phone-sheet {
+      background: #ffffff;
+      border-radius: 28px;
+      max-width: 380px;
+      width: 100%;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+      overflow: hidden;
+      border: 3px solid #1e293b;
+      animation: slideUpModal 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes slideUpModal {
+      from { transform: translateY(40px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .gpay-header-bar {
+      background: #1f2937;
+      color: #fff;
+      padding: 0.75rem 1.25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8rem;
+    }
+    .gpay-body {
+      padding: 2rem 1.5rem;
+      text-align: center;
+    }
+    .gpay-logo-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 60px;
+      height: 60px;
+      background: #f1f5f9;
+      border-radius: 50%;
+      margin: 0 auto 1rem;
+      font-size: 1.75rem;
+      color: #1a73e8;
+    }
+    .gpay-merchant-name {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #111827;
+      margin-bottom: 0.25rem;
+    }
+    .gpay-vpa {
+      font-size: 0.8rem;
+      color: #6b7280;
+      margin-bottom: 1.5rem;
+      font-family: monospace;
+    }
+    .gpay-amount-box {
+      background: #f8fafc;
+      border: 2px dashed #3b82f6;
+      border-radius: 16px;
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+    .gpay-amount-tag {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #3b82f6;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+    }
+    .gpay-amount-value {
+      font-size: 2.25rem;
+      font-weight: 800;
+      color: #0f172a;
+      font-family: var(--font-heading);
+    }
+    .gpay-footer-action {
+      padding: 1.25rem;
+      background: #f8fafc;
+      border-top: 1px solid var(--border-light);
+    }
+  </style>
+</head>
+<body class="dashboard-layout">
+
+  <!-- Sidebar -->
+  <aside class="dashboard-sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon" style="background: linear-gradient(135deg, #10b981, #059669);">
+        <i class="fa-solid fa-bicycle"></i>
+      </div>
+      <div class="brand-text">
+        <h2>instaa</h2>
+        <span>GROCERIES MADE EASIER</span>
+      </div>
+    </div>
+
+    <div class="sidebar-role-badge">
+      <i class="fa-solid fa-circle-user"></i>
+      <span>Logged in as <strong>Customer</strong></span>
+    </div>
+
+    <ul class="sidebar-nav">
+      <div class="nav-section-title">Shop & Deliver</div>
+      <li><a href="customer-dashboard.html"><i class="fa-solid fa-house"></i> Home Dashboard</a></li>
+      <li><a href="products.html"><i class="fa-solid fa-store"></i> Browse Products</a></li>
+      <li>
+        <a href="cart.html">
+          <i class="fa-solid fa-cart-shopping"></i> My Basket
+          <span class="nav-badge cart-badge">0</span>
+        </a>
+      </li>
+      <li><a href="order-tracking.html"><i class="fa-solid fa-route"></i> Live Tracking</a></li>
+      <li><a href="order-history.html"><i class="fa-solid fa-clock-rotate-left"></i> Order History</a></li>
+    </ul>
+
+    <div class="sidebar-user">
+      <div class="user-profile-info">
+        <img src="" alt="User" class="user-profile-avatar user-avatar" onerror="this.src='https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80'">
+        <div class="user-profile-text">
+          <div class="user-name">Loading...</div>
+          <div class="user-role">Customer</div>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="Auth.logoutUser()" title="Logout">
+        <i class="fa-solid fa-power-off"></i>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dashboard-main">
+    <header class="dashboard-header">
+      <div class="header-left">
+        <button class="mobile-toggle" id="mobile-sidebar-toggle">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="header-title-box">
+          <h1>instaa Order Checkout</h1>
+          <p>Instant UPI Handshake & Auto-Typed Payment Flow</p>
+        </div>
+      </div>
+      <div class="header-right">
+        <a href="cart.html" class="btn btn-outline btn-sm">
+          <i class="fa-solid fa-arrow-left"></i> Back to Basket
+        </a>
+      </div>
+    </header>
+
+    <div class="dashboard-content">
+      <div class="cart-checkout-grid">
+        
+        <!-- Left Column: Delivery Address & Payment Options -->
+        <div>
+          <!-- Step 1: Address & Village Location -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">
+                <i class="fa-solid fa-location-dot text-primary"></i> 1. Delivery Village & Doorstep
+              </h3>
+            </div>
+            <div class="card-body">
+              <div class="form-group">
+                <label class="form-label" for="checkout-town">Destination Operating Town</label>
+                <select id="checkout-town" class="form-control" onchange="handleTownChange(this.value)">
+                  <option value="TOWN-01">Town A (Rampur Village)</option>
+                  <option value="TOWN-02">Town B (Shampur Village)</option>
+                </select>
+                <small style="color: var(--text-muted); font-size: 0.78rem;">
+                  Local village fee is ₹40. Inter-town delivery fee is ₹70 (45-60 min ETA).
+                </small>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="checkout-name">Recipient Name</label>
+                <input type="text" id="checkout-name" class="form-control" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="checkout-phone">Phone Number</label>
+                <input type="tel" id="checkout-phone" class="form-control" required>
+              </div>
+              <div class="form-group">
+                <div class="flex justify-between items-center" style="margin-bottom: 0.35rem;">
+                  <label class="form-label" for="checkout-address" style="margin: 0;">Doorstep Address & Landmarks</label>
+                  <button type="button" class="btn btn-outline btn-sm" id="btn-detect-checkout-gps" onclick="handleDetectCheckoutGPS()" style="font-size: 0.75rem; padding: 0.2rem 0.65rem;">
+                    <i class="fa-solid fa-location-crosshairs text-success"></i> Auto-Detect & Share Live GPS
+                  </button>
+                </div>
+                <textarea id="checkout-address" class="form-control" rows="2" placeholder="House/Flat No, Village Cross, Landmark" required></textarea>
+                <div id="checkout-gps-badge" style="display: none; margin-top: 0.4rem; font-size: 0.8rem; color: #047857; background: #ecfdf5; padding: 0.35rem 0.6rem; border-radius: 6px; border: 1px solid #10b981;">
+                  <i class="fa-solid fa-circle-check text-success"></i> <strong>Live GPS Coordinates Attached:</strong> <code id="checkout-coords-text">13.2085, 77.7195</code> (Rider will navigate directly to pin)
+                </div>
+                <input type="hidden" id="checkout-lat" value="">
+                <input type="hidden" id="checkout-lng" value="">
+                <input type="hidden" id="checkout-gps-shared" value="false">
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 2: Payment Method (Feature 5: App-to-App Handshake) -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">
+                <i class="fa-solid fa-mobile-screen text-primary"></i> 2. Payment Flow (Customer to Instaa)
+              </h3>
+              <span class="badge badge-success"><i class="fa-solid fa-handshake"></i> App-to-App Ready</span>
+            </div>
+            <div class="card-body">
+              <!-- GPay Method -->
+              <div class="payment-method-item selected" onclick="selectPaymentMethod('GPAY', this)">
+                <input type="radio" name="pay-method" id="pay-gpay" checked>
+                <div class="flex items-center gap-2" style="flex: 1;">
+                  <i class="fa-brands fa-google-pay text-primary" style="font-size: 1.75rem;"></i>
+                  <div>
+                    <strong>Google Pay (GPay) Handshake</strong>
+                    <p style="font-size: 0.8rem; color: var(--text-muted);">Direct app-to-app UPI intent with auto-typed cart value</p>
+                  </div>
+                </div>
+                <span class="badge badge-primary">Recommended</span>
+              </div>
+
+              <!-- Other UPI -->
+              <div class="payment-method-item" onclick="selectPaymentMethod('UPI', this)">
+                <input type="radio" name="pay-method" id="pay-upi">
+                <div class="flex items-center gap-2" style="flex: 1;">
+                  <i class="fa-solid fa-qrcode text-success" style="font-size: 1.5rem;"></i>
+                  <div>
+                    <strong>Any Other UPI App</strong>
+                    <p style="font-size: 0.8rem; color: var(--text-muted);">PhonePe, Paytm, or BHIM UPI Intent</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Flow Clarification Card from Image 3 -->
+              <div style="margin-top: 1.5rem; background: #f8fafc; border: 1px dashed var(--border-light); border-radius: var(--radius-md); padding: 0.85rem; font-size: 0.82rem; color: var(--text-muted);">
+                <strong style="color: var(--text-main); display: block; margin-bottom: 0.35rem;">
+                  <i class="fa-solid fa-arrows-spin text-primary"></i> Two-Legged Settlement Flow:
+                </strong>
+                <span>• <strong>Customer to Instaa:</strong> Deposited directly into Instaa Admin HDFC Bank Account via Google Pay.<br></span>
+                <span>• <strong>Instaa to Store & Rider:</strong> Virtual ledger automatically updated. Paid via Razorpay settlement.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Order Summary & Place Order -->
+        <div>
+          <div class="order-summary-card">
+            <h3 class="summary-title">Billing Summary</h3>
+            
+            <div class="summary-row">
+              <span id="checkout-items-count">Item Subtotal (0 items)</span>
+              <span id="checkout-subtotal">₹0.00</span>
+            </div>
+            
+            <div class="summary-row">
+              <span id="checkout-delivery-label">Delivery Fee (Local Rampur)</span>
+              <span id="checkout-delivery-fee">₹40.00</span>
+            </div>
+
+            <!-- Inter-town notice if Town B selected -->
+            <div id="inter-town-badge-box" style="display: none; margin: 0.5rem 0;">
+              <div style="background: #fffbeb; border: 1px solid #f59e0b; border-radius: var(--radius-sm); padding: 0.5rem; font-size: 0.75rem; color: #b45309;">
+                <i class="fa-solid fa-tree-city"></i> <strong>Inter-Town Delivery:</strong> Order dispatched from Town A Store to Town B (₹70 delivery fee, 45-60 min ETA).
+              </div>
+            </div>
+
+            <div class="summary-row">
+              <span>Platform Service Fee</span>
+              <span id="checkout-platform-fee">₹15.00</span>
+            </div>
+            
+            <div class="summary-row">
+              <span>GST & Taxes (5%)</span>
+              <span id="checkout-gst">₹0.00</span>
+            </div>
+            
+            <div class="summary-row total-row">
+              <span>Grand Total</span>
+              <span id="checkout-grand-total" style="color: var(--primary);">₹0.00</span>
+            </div>
+
+            <!-- Varying Commission Transparency Card -->
+            <div style="margin: 1.25rem 0; padding: 0.75rem; background: #f0fdf4; border-radius: var(--radius-md); border: 1px solid #86efac; font-size: 0.78rem; color: #166534;">
+              <i class="fa-solid fa-shield-check"></i> <strong>Instaa Guarantee:</strong>
+              Category-based merchant commission (3%-10%) itemized automatically. No hidden customer markups.
+            </div>
+
+            <button type="button" class="btn btn-primary btn-block btn-lg" id="btn-pay-now" onclick="initiateAppToAppHandshake()">
+              <i class="fa-brands fa-google-pay" style="font-size: 1.3rem;"></i> Proceed to Pay via Google Pay &rarr;
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- Google Pay Mobile Sheet Simulation Modal (Feature 5 from design image) -->
+  <div class="gpay-modal-backdrop" id="gpay-handshake-modal">
+    <div class="gpay-phone-sheet">
+      <div class="gpay-header-bar">
+        <span><i class="fa-brands fa-google"></i> Google Pay</span>
+        <button onclick="closeGPayModal()" style="background: none; border: none; color: #fff; cursor: pointer; font-size: 1.1rem;">&times;</button>
+      </div>
+
+      <div class="gpay-body">
+        <div class="gpay-logo-badge">
+          <i class="fa-solid fa-building-columns"></i>
+        </div>
+
+        <div class="gpay-merchant-name">INSTAA Q-COMMERCE</div>
+        <div class="gpay-vpa">instaa.bank@okhdfcbank</div>
+
+        <!-- The Auto-Typed Cart Value Screen -->
+        <div class="gpay-amount-box">
+          <div class="gpay-amount-tag">Auto-Typed Cart Value</div>
+          <div class="gpay-amount-value" id="gpay-auto-amount">₹0.00</div>
+          <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.35rem;">
+            <i class="fa-solid fa-lock"></i> Depositing to Instaa Admin Central Account
+          </div>
+        </div>
+
+        <div style="font-size: 0.8rem; color: #64748b; margin-bottom: 1rem;">
+          Paying using <strong>State Bank of India •••• 5621</strong>
+        </div>
+      </div>
+
+      <div class="gpay-footer-action">
+        <button class="btn btn-primary btn-block btn-lg" id="btn-gpay-complete" onclick="executeGPayCallback()" style="background: #1a73e8; border: none; border-radius: 20px;">
+          <i class="fa-brands fa-google-pay"></i> Pay <span id="gpay-btn-amount">₹0.00</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="../js/storage.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/products.js"></script>
+  <script src="../js/cart.js"></script>
+  <script src="../js/orders.js"></script>
+  <script src="../js/dispatch.js"></script>
+  <script src="../js/otp.js"></script>
+  <script src="../js/wallet.js"></script>
+  <script src="../js/notifications.js"></script>
+  <script src="../js/tracking-api.js"></script>
+  <script src="../js/app.js"></script>
+
+  <script>
+    let selectedMethod = 'GPAY';
+    let currentCustomerTown = 'TOWN-01';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const user = Auth.checkAuth(['customer']);
+      if (!user) return;
+
+      const items = Cart.getItems();
+      if (items.length === 0) {
+        alert('Your basket is empty. Sourcing fresh catalog.');
+        window.location.href = 'products.html';
+        return;
+      }
+
+      currentCustomerTown = user.townId || Storage.get(STORAGE_KEYS.SELECTED_TOWN, 'TOWN-01');
+      document.getElementById('checkout-town').value = currentCustomerTown;
+
+      document.getElementById('checkout-name').value = user.name || '';
+      document.getElementById('checkout-phone').value = user.phone || '';
+      document.getElementById('checkout-address').value = user.address || '';
+
+      renderCheckoutSummary();
+    });
+
+    function handleTownChange(val) {
+      currentCustomerTown = val;
+      renderCheckoutSummary();
+    }
+
+    async function handleDetectCheckoutGPS() {
+      const btn = document.getElementById('btn-detect-checkout-gps');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Detecting GPS...';
+
+      const loc = await TrackingAPI.requestDeviceLocation();
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-location-dot text-success"></i> GPS Attached';
+
+      document.getElementById('checkout-lat').value = loc.lat;
+      document.getElementById('checkout-lng').value = loc.lng;
+      document.getElementById('checkout-gps-shared').value = 'true';
+      document.getElementById('checkout-coords-text').textContent = `${loc.lat.toFixed(5)}° N, ${loc.lng.toFixed(5)}° E`;
+      document.getElementById('checkout-gps-badge').style.display = 'block';
+
+      Notifications.showToast(
+        'Live GPS Attached!',
+        `Doorstep GPS pin (${loc.lat.toFixed(4)}, ${loc.lng.toFixed(4)}) linked for rider navigation.`,
+        'success'
+      );
+    }
+
+    function selectPaymentMethod(method, element) {
+      selectedMethod = method;
+      document.querySelectorAll('.payment-method-item').forEach(item => {
+        item.classList.remove('selected');
+        const radio = item.querySelector('input[type="radio"]');
+        if (radio) radio.checked = false;
+      });
+
+      element.classList.add('selected');
+      const radio = element.querySelector('input[type="radio"]');
+      if (radio) radio.checked = true;
+
+      const btn = document.getElementById('btn-pay-now');
+      if (method === 'GPAY') {
+        btn.innerHTML = '<i class="fa-brands fa-google-pay" style="font-size: 1.3rem;"></i> Proceed to Pay via Google Pay &rarr;';
+      } else {
+        btn.innerHTML = `<i class="fa-solid fa-lock"></i> Authorize Payment (${method}) &rarr;`;
+      }
+    }
+
+    function renderCheckoutSummary() {
+      const items = Cart.getItems();
+      const totals = Cart.getTotals();
+      const config = Storage.get(STORAGE_KEYS.SYSTEM_CONFIG, DEFAULT_CONFIG);
+
+      // Check if inter-town (Store is in Town A STR-001 by default)
+      const isInterTown = currentCustomerTown !== 'TOWN-01';
+      const deliveryFee = isInterTown ? (config.interTownDeliveryFee || 70) : (config.baseDeliveryFee || 40);
+      const grandTotal = totals.subtotal + deliveryFee + totals.platformFee + totals.gst;
+
+      document.getElementById('checkout-items-count').textContent = `Item Subtotal (${totals.itemCount} items)`;
+      document.getElementById('checkout-subtotal').textContent = App.formatCurrency(totals.subtotal);
+      
+      const feeLabel = document.getElementById('checkout-delivery-label');
+      feeLabel.textContent = isInterTown ? 'Inter-Town Delivery Fee (Town B)' : 'Delivery Fee (Local Rampur)';
+      document.getElementById('checkout-delivery-fee').textContent = App.formatCurrency(deliveryFee);
+
+      document.getElementById('inter-town-badge-box').style.display = isInterTown ? 'block' : 'none';
+      document.getElementById('checkout-platform-fee').textContent = App.formatCurrency(totals.platformFee);
+      document.getElementById('checkout-gst').textContent = App.formatCurrency(totals.gst);
+      document.getElementById('checkout-grand-total').textContent = App.formatCurrency(grandTotal);
+    }
+
+    /**
+     * FEATURE 5: APP TO APP HANDSHAKE
+     * Opens installed payment app with cart value auto-typed
+     */
+    function initiateAppToAppHandshake() {
+      const name = document.getElementById('checkout-name').value.trim();
+      const phone = document.getElementById('checkout-phone').value.trim();
+      const address = document.getElementById('checkout-address').value.trim();
+
+      if (!name || !phone || !address) {
+        alert('Please fill out your delivery address and contact information.');
+        return;
+      }
+
+      const totals = Cart.getTotals();
+      const config = Storage.get(STORAGE_KEYS.SYSTEM_CONFIG, DEFAULT_CONFIG);
+      const isInterTown = currentCustomerTown !== 'TOWN-01';
+      const deliveryFee = isInterTown ? (config.interTownDeliveryFee || 70) : (config.baseDeliveryFee || 40);
+      const grandTotal = totals.subtotal + deliveryFee + totals.platformFee + totals.gst;
+
+      // 1. Generate real mobile UPI Intent URI for app-to-app handshake
+      const upiUrl = `upi://pay?pa=instaa.bank@okhdfcbank&pn=Instaa%20Grocery&am=${grandTotal.toFixed(2)}&cu=INR&tn=Order%20Payment`;
+      console.log('📱 Generated UPI Intent URI:', upiUrl);
+
+      // 2. Open Google Pay App Handshake Simulation Interface
+      document.getElementById('gpay-auto-amount').textContent = `₹${grandTotal.toFixed(2)}`;
+      document.getElementById('gpay-btn-amount').textContent = `₹${grandTotal.toFixed(2)}`;
+      document.getElementById('gpay-handshake-modal').style.display = 'flex';
+    }
+
+    function closeGPayModal() {
+      document.getElementById('gpay-handshake-modal').style.display = 'none';
+    }
+
+    // Step 7 & 8: Payment Success Callback (Deposit to Admin Account)
+    function executeGPayCallback() {
+      const btn = document.getElementById('btn-gpay-complete');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing UPI Handshake...';
+
+      setTimeout(() => {
+        const user = Auth.getCurrentUser();
+        const items = Cart.getItems();
+        const totals = Cart.getTotals();
+        const config = Storage.get(STORAGE_KEYS.SYSTEM_CONFIG, DEFAULT_CONFIG);
+        const isInterTown = currentCustomerTown !== 'TOWN-01';
+        const deliveryFee = isInterTown ? (config.interTownDeliveryFee || 70) : (config.baseDeliveryFee || 40);
+        const grandTotal = totals.subtotal + deliveryFee + totals.platformFee + totals.gst;
+        const paymentId = `pay_gpay_${Date.now().toString().slice(-8)}`;
+
+        const latVal = parseFloat(document.getElementById('checkout-lat').value);
+        const lngVal = parseFloat(document.getElementById('checkout-lng').value);
+        const isShared = document.getElementById('checkout-gps-shared').value === 'true';
+
+        closeGPayModal();
+
+        // Create Order in Storage with Varying Commission Slabs
+        const newOrder = Orders.createOrder({
+          customerId: user.id,
+          customerName: document.getElementById('checkout-name').value.trim(),
+          customerPhone: document.getElementById('checkout-phone').value.trim(),
+          customerTownId: currentCustomerTown,
+          deliveryAddress: document.getElementById('checkout-address').value.trim(),
+          customerLat: !isNaN(latVal) ? latVal : (isInterTown ? 13.2450 : 13.2080),
+          customerLng: !isNaN(lngVal) ? lngVal : (isInterTown ? 77.7600 : 77.7190),
+          customerLocationShared: isShared,
+          storeId: 'STR-001',
+          items: items,
+          subtotal: totals.subtotal,
+          deliveryFee: deliveryFee,
+          platformFee: totals.platformFee,
+          gst: totals.gst,
+          total: grandTotal,
+          paymentMethod: selectedMethod,
+          paymentId: paymentId
+        });
+
+        Notifications.showToast(
+          'GPay Payment Completed! 🎉',
+          `Order #${newOrder.id} placed! Deposited to Instaa Admin Acc. Customer OTP: ${newOrder.customerOtp}`,
+          'success',
+          7000
+        );
+
+        setTimeout(() => {
+          window.location.href = `order-tracking.html?orderId=${newOrder.id}`;
+        }, 1200);
+      }, 1400);
+    }
+  </script>
+</body>
+</html>

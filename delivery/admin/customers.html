@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customer Management - Admin ERP</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/admin.css">
+</head>
+<body class="dashboard-layout">
+
+  <!-- Sidebar -->
+  <aside class="dashboard-sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon" style="background: linear-gradient(135deg, #7c3aed, #6366f1);">
+        <i class="fa-solid fa-shield-halved"></i>
+      </div>
+      <div class="brand-text">
+        <h2>SmartAdmin</h2>
+        <span>Platform Executive ERP</span>
+      </div>
+    </div>
+
+    <div class="sidebar-role-badge">
+      <i class="fa-solid fa-lock"></i>
+      <span>Logged in as <strong>Administrator</strong></span>
+    </div>
+
+    <ul class="sidebar-nav">
+      <div class="nav-section-title">Administration</div>
+      <li><a href="admin-dashboard.html"><i class="fa-solid fa-chart-pie"></i> Executive Overview</a></li>
+      <li><a href="orders.html"><i class="fa-solid fa-boxes-stacked"></i> Master Order Log</a></li>
+      <li><a href="riders.html"><i class="fa-solid fa-motorcycle"></i> Rider Fleet & Radar</a></li>
+      <li><a href="customers.html" class="active"><i class="fa-solid fa-users"></i> Customer Database</a></li>
+      <li><a href="store-management.html"><i class="fa-solid fa-store"></i> Store & Commission</a></li>
+      <li><a href="server-health.html"><i class="fa-solid fa-server text-warning"></i> King & Queen HA Monitor</a></li>
+      <li><a href="payments.html"><i class="fa-solid fa-credit-card"></i> Payment Transactions</a></li>
+      <li><a href="reports.html"><i class="fa-solid fa-chart-line"></i> Analytics & Reports</a></li>
+    </ul>
+
+    <div class="sidebar-user">
+      <div class="user-profile-info">
+        <img src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&auto=format&fit=crop&q=80" alt="Admin" class="user-profile-avatar">
+        <div class="user-profile-text">
+          <div class="user-name">Chief Administrator</div>
+          <div class="user-role">Superuser Access</div>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="Auth.logoutUser()" title="Logout">
+        <i class="fa-solid fa-power-off"></i>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dashboard-main">
+    <header class="dashboard-header">
+      <div class="header-left">
+        <button class="mobile-toggle" id="mobile-sidebar-toggle">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="header-title-box">
+          <h1>Customer Management Database</h1>
+          <p>Registered customer profiles, default addresses, and purchase frequency</p>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <button class="btn btn-outline btn-sm" onclick="renderCustomersTable()">
+          <i class="fa-solid fa-rotate"></i> Refresh List
+        </button>
+      </div>
+    </header>
+
+    <div class="dashboard-content">
+
+      <!-- Search Toolbar -->
+      <div class="catalog-toolbar">
+        <div class="catalog-search-box">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" id="cust-search" placeholder="Search by name, email, or phone number..." oninput="filterCustomerTable(this.value)">
+        </div>
+        <div>
+          <span class="badge badge-indigo" id="customer-total-count">0 Customers Enrolled</span>
+        </div>
+      </div>
+
+      <!-- Customer Accounts Table -->
+      <div class="card">
+        <div class="card-body" style="padding: 0;">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Customer ID</th>
+                  <th>Customer Profile</th>
+                  <th>Contact Details</th>
+                  <th>Registered Address</th>
+                  <th>Joined Date</th>
+                  <th>Orders Placed</th>
+                  <th>Total Spent</th>
+                </tr>
+              </thead>
+              <tbody id="customers-tbody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Scripts -->
+  <script src="../js/storage.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/products.js"></script>
+  <script src="../js/cart.js"></script>
+  <script src="../js/orders.js"></script>
+  <script src="../js/dispatch.js"></script>
+  <script src="../js/otp.js"></script>
+  <script src="../js/wallet.js"></script>
+  <script src="../js/notifications.js"></script>
+  <script src="../js/app.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      Auth.checkAuth(['admin']);
+      renderCustomersTable();
+    });
+
+    function renderCustomersTable(searchQuery = '') {
+      const users = Storage.get(STORAGE_KEYS.USERS, []);
+      let customers = users.filter(u => u.role === 'customer');
+      const allOrders = Orders.getAll();
+
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        customers = customers.filter(c => 
+          c.name.toLowerCase().includes(q) || 
+          c.email.toLowerCase().includes(q) || 
+          (c.phone && c.phone.includes(q))
+        );
+      }
+
+      document.getElementById('customer-total-count').textContent = `${customers.length} Customers Enrolled`;
+      const tbody = document.getElementById('customers-tbody');
+
+      if (customers.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 2.5rem;">No customer records found matching query.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = customers.map(c => {
+        const orders = allOrders.filter(o => o.customerId === c.id);
+        const spent = orders.reduce((sum, o) => sum + (o.total || 0), 0);
+
+        return `
+          <tr>
+            <td><code style="font-weight: 700; color: var(--primary);">${c.id}</code></td>
+            <td>
+              <div class="flex items-center gap-2">
+                <img src="${c.avatar || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80'}" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover;">
+                <strong>${c.name}</strong>
+              </div>
+            </td>
+            <td>
+              <div>${c.email}</div>
+              <span style="font-size: 0.8rem; color: var(--text-muted);">${c.phone || '--'}</span>
+            </td>
+            <td style="max-width: 250px; font-size: 0.85rem; color: var(--text-muted);">${c.address || 'Standard Address'}</td>
+            <td>${c.joinedDate || '2026-01-15'}</td>
+            <td><strong style="color: var(--primary); font-size: 1.05rem;">${orders.length}</strong></td>
+            <td><strong>${App.formatCurrency(spent)}</strong></td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function filterCustomerTable(val) {
+      renderCustomersTable(val);
+    }
+  </script>
+</body>
+</html>

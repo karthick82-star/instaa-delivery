@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The King & Queen HA Monitor - Instaa Admin ERP</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/admin.css">
+  <style>
+    .ha-cluster-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .server-card {
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      border: 2px solid var(--border-light);
+      padding: 1.75rem;
+      position: relative;
+      transition: all 0.3s ease;
+    }
+    .server-card.active-primary {
+      border-color: #10b981;
+      box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.2);
+    }
+    .server-card.outage {
+      border-color: #ef4444;
+      background: #fef2f2;
+    }
+    .server-badge-crown {
+      position: absolute;
+      top: 1.25rem;
+      right: 1.25rem;
+      font-size: 1.75rem;
+    }
+    .infra-isolation-banner {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      margin-bottom: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+    }
+    .heartbeat-pulse-box {
+      background: #111827;
+      color: #fff;
+      border-radius: var(--radius-lg);
+      padding: 1.75rem;
+      margin-bottom: 2rem;
+    }
+    .pulse-dot-green {
+      width: 14px;
+      height: 14px;
+      background: #10b981;
+      border-radius: 50%;
+      display: inline-block;
+      box-shadow: 0 0 12px #10b981;
+      animation: heartPulse 1.5s infinite;
+    }
+    @keyframes heartPulse {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+      70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+    .sms-alert-item {
+      background: var(--bg-alt);
+      border-left: 4px solid var(--primary);
+      padding: 0.85rem 1rem;
+      border-radius: var(--radius-sm);
+      margin-bottom: 0.75rem;
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body class="dashboard-layout">
+
+  <!-- Sidebar -->
+  <aside class="dashboard-sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon" style="background: linear-gradient(135deg, #7c3aed, #6366f1);">
+        <i class="fa-solid fa-shield-halved"></i>
+      </div>
+      <div class="brand-text">
+        <h2>InstaaAdmin</h2>
+        <span>Platform Executive ERP</span>
+      </div>
+    </div>
+
+    <div class="sidebar-role-badge">
+      <i class="fa-solid fa-lock"></i>
+      <span>Logged in as <strong>Administrator</strong></span>
+    </div>
+
+    <ul class="sidebar-nav">
+      <div class="nav-section-title">Administration</div>
+      <li><a href="admin-dashboard.html"><i class="fa-solid fa-chart-pie"></i> Executive Overview</a></li>
+      <li><a href="orders.html"><i class="fa-solid fa-boxes-stacked"></i> Master Order Log</a></li>
+      <li><a href="riders.html"><i class="fa-solid fa-motorcycle"></i> Rider Fleet & Radar</a></li>
+      <li><a href="customers.html"><i class="fa-solid fa-users"></i> Customer Database</a></li>
+      <li><a href="store-management.html"><i class="fa-solid fa-store"></i> Store & Commission</a></li>
+      <li><a href="server-health.html" class="active"><i class="fa-solid fa-server text-warning"></i> King & Queen HA Monitor</a></li>
+      <li><a href="payments.html"><i class="fa-solid fa-credit-card"></i> Payment Transactions</a></li>
+      <li><a href="reports.html"><i class="fa-solid fa-chart-line"></i> Analytics & Reports</a></li>
+    </ul>
+
+    <div class="sidebar-user">
+      <div class="user-profile-info">
+        <img src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&auto=format&fit=crop&q=80" alt="Admin" class="user-profile-avatar">
+        <div class="user-profile-text">
+          <div class="user-name">Chief Administrator</div>
+          <div class="user-role">Superuser Access</div>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="Auth.logoutUser()" title="Logout">
+        <i class="fa-solid fa-power-off"></i>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dashboard-main">
+    <header class="dashboard-header">
+      <div class="header-left">
+        <button class="mobile-toggle" id="mobile-sidebar-toggle">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="header-title-box">
+          <h1>THE KING & QUEEN (Server HA Cluster)</h1>
+          <p>Continuous Heartbeat, Automatic Failover, Zero Shared Infrastructure, & Instant SMS Alerts</p>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <div class="flex items-center gap-2">
+          <span class="badge badge-success" id="cluster-overall-badge">
+            <span class="pulse-dot-green"></span> CLUSTER: 100% HEALTHY
+          </span>
+        </div>
+      </div>
+    </header>
+
+    <div class="dashboard-content">
+
+      <!-- Infrastructure Isolation Guarantee Banner (Feature 1 Requirement) -->
+      <div class="infra-isolation-banner">
+        <div style="font-size: 2.25rem; color: #2563eb;"><i class="fa-solid fa-network-wired"></i></div>
+        <div>
+          <h4 style="color: #1e3a8a; font-size: 1.05rem; margin-bottom: 0.25rem;">
+            Infrastructure Isolation Requirement Enforced
+          </h4>
+          <p style="font-size: 0.88rem; color: #1e40af; line-height: 1.5;">
+            "The primary and secondary servers must not share the same underlying hosting provider, data center network, or core virtualization vendor."
+            <br>
+            <strong>KING:</strong> AWS Cloud (Mumbai DC-1, Nitro Hypervisor) &bull; 
+            <strong>QUEEN:</strong> Google Cloud Platform (Bangalore DC-2, KVM Compute Engine) &bull; Zero Shared SPOF.
+          </p>
+        </div>
+      </div>
+
+      <!-- Live Heartbeat & Traffic Router Bar -->
+      <div class="heartbeat-pulse-box">
+        <div class="flex justify-between items-center flex-wrap gap-2" style="margin-bottom: 1.25rem;">
+          <div class="flex items-center gap-3">
+            <span class="pulse-dot-green" id="pulse-indicator-node"></span>
+            <div>
+              <h3 style="color: #fff; font-size: 1.25rem; margin-bottom: 0.15rem;">
+                Continuous Heartbeat Health Check (3-Second Interval)
+              </h3>
+              <p style="font-size: 0.85rem; color: #9ca3af;" id="heartbeat-status-desc">
+                Pinging Primary (KING) every 3000ms. If 3 consecutive heartbeats are missed, QUEEN auto-promotes instantly.
+              </p>
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <span style="font-size: 0.75rem; text-transform: uppercase; color: #9ca3af; font-weight: 700;">Active Traffic Route</span>
+            <div style="font-size: 1.35rem; font-weight: 800; color: #34d399;" id="active-traffic-route">
+              ROUTE &rarr; KING (AWS Mumbai)
+            </div>
+          </div>
+        </div>
+
+        <div style="background: rgba(255, 255, 255, 0.08); padding: 1rem; border-radius: var(--radius-md); display: flex; justify-content: space-between; align-items: center; flex-wrap: gap-2;">
+          <div>
+            <span style="font-size: 0.8rem; color: #94a3b8;">Primary Ping Latency:</span>
+            <strong id="live-ping-val" style="color: #fff; margin-left: 0.4rem;">22 ms</strong>
+          </div>
+          <div>
+            <span style="font-size: 0.8rem; color: #94a3b8;">Standby Sync Lag:</span>
+            <strong id="live-lag-val" style="color: #fff; margin-left: 0.4rem;">6 ms (Near Zero)</strong>
+          </div>
+          <div>
+            <span style="font-size: 0.8rem; color: #94a3b8;">Failover Automation:</span>
+            <strong style="color: #60a5fa; margin-left: 0.4rem;">ENABLED (Zero Manual Intervention)</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- THE KING & QUEEN SERVERS GRID -->
+      <div class="ha-cluster-grid">
+        
+        <!-- KING SERVER (PRIMARY) -->
+        <div class="server-card active-primary" id="king-server-card">
+          <div class="server-badge-crown">👑</div>
+          <span class="badge badge-primary" id="king-role-badge">PRIMARY SERVER</span>
+          <h2 style="margin: 0.5rem 0 0.25rem; font-size: 1.5rem;">KING</h2>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+            AWS Cloud &bull; ap-south-1 (Mumbai DC-1) &bull; 13.235.42.10
+          </p>
+
+          <div style="background: var(--bg-alt); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.25rem; font-size: 0.85rem;">
+            <div class="flex justify-between" style="margin-bottom: 0.4rem;">
+              <span class="text-muted">Virtualization:</span>
+              <strong>AWS Nitro Hypervisor</strong>
+            </div>
+            <div class="flex justify-between" style="margin-bottom: 0.4rem;">
+              <span class="text-muted">Health Status:</span>
+              <strong id="king-health-status" style="color: var(--success);">ONLINE (Healthy)</strong>
+            </div>
+            <div class="flex justify-between" style="margin-bottom: 0.4rem;">
+              <span class="text-muted">CPU / Memory:</span>
+              <span>28% / 42%</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-muted">Uptime:</span>
+              <span>99.99%</span>
+            </div>
+          </div>
+
+          <div class="flex gap-2">
+            <button class="btn btn-outline btn-sm btn-block" style="color: var(--danger); border-color: var(--danger);" onclick="simulateKingOutage()">
+              <i class="fa-solid fa-power-off"></i> Simulate KING Outage
+            </button>
+            <button class="btn btn-success btn-sm btn-block" onclick="restoreKingServer()">
+              <i class="fa-solid fa-rotate-right"></i> Restore & Failback
+            </button>
+          </div>
+        </div>
+
+        <!-- QUEEN SERVER (SECONDARY STANDBY) -->
+        <div class="server-card" id="queen-server-card">
+          <div class="server-badge-crown" style="opacity: 0.85;">👸</div>
+          <span class="badge badge-purple" id="queen-role-badge">SECONDARY STANDBY</span>
+          <h2 style="margin: 0.5rem 0 0.25rem; font-size: 1.5rem;">QUEEN</h2>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+            Google Cloud Platform &bull; asia-south2 (Bangalore DC-2) &bull; 34.93.18.99
+          </p>
+
+          <div style="background: var(--bg-alt); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.25rem; font-size: 0.85rem;">
+            <div class="flex justify-between" style="margin-bottom: 0.4rem;">
+              <span class="text-muted">Virtualization:</span>
+              <strong>KVM Compute Engine (Isolated)</strong>
+            </div>
+            <div class="flex justify-between" style="margin-bottom: 0.4rem;">
+              <span class="text-muted">Standby Readiness:</span>
+              <strong id="queen-readiness-status" style="color: var(--purple);">HOT STANDBY (Synchronized)</strong>
+            </div>
+            <div class="flex justify-between" style="margin-bottom: 0.4rem;">
+              <span class="text-muted">Sync Lag:</span>
+              <span>&lt; 10ms (Real-Time Replication)</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-muted">Failover Trigger:</span>
+              <span>Auto (0 Manual Steps)</span>
+            </div>
+          </div>
+
+          <button class="btn btn-outline btn-sm btn-block" onclick="manualPromoteQueen()">
+            <i class="fa-solid fa-shield-halved"></i> Manual Promotion Test
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Instant SMS Alerting Integration Card -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i class="fa-solid fa-comment-sms text-primary"></i> Instant SMS Alerting Integration
+          </h3>
+          <span class="badge badge-primary">Emergency Admin Dispatch</span>
+        </div>
+        <div class="card-body">
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+            Whenever a heartbeat failure or automatic failover occurs, the platform automatically triggers real-time SMS alerts to registered platform administrators.
+          </p>
+
+          <div class="form-group" style="max-width: 400px; margin-bottom: 1.5rem;">
+            <label class="form-label">Alert Target Phone Number</label>
+            <input type="text" id="sms-target-phone" class="form-control" value="+91 98000 00000" readonly>
+          </div>
+
+          <h4 style="font-size: 0.95rem; margin-bottom: 0.75rem;">SMS Notification Log:</h4>
+          <div id="sms-logs-container" style="max-height: 250px; overflow-y: auto;">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Scripts -->
+  <script src="../js/storage.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/orders.js"></script>
+  <script src="../js/wallet.js"></script>
+  <script src="../js/notifications.js"></script>
+  <script src="../js/ha-server.js"></script>
+  <script src="../js/app.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      Auth.checkAuth(['admin']);
+      renderHAState();
+
+      // Listen for continuous heartbeat updates
+      HAServer.subscribe(state => {
+        renderHAState(state);
+      });
+    });
+
+    function renderHAState(state = null) {
+      if (!state) state = HAServer.getState();
+
+      const isKingOnline = state.king.status === 'ONLINE';
+      const isQueenActive = state.activeServer === 'QUEEN';
+
+      // Update King Card
+      const kingCard = document.getElementById('king-server-card');
+      const kingStatus = document.getElementById('king-health-status');
+      const kingRoleBadge = document.getElementById('king-role-badge');
+
+      if (isKingOnline) {
+        kingCard.className = state.activeServer === 'KING' ? 'server-card active-primary' : 'server-card';
+        kingStatus.innerHTML = '<span style="color: var(--success);"><i class="fa-solid fa-circle-check"></i> ONLINE (Healthy)</span>';
+        kingRoleBadge.className = state.activeServer === 'KING' ? 'badge badge-primary' : 'badge badge-secondary';
+        kingRoleBadge.textContent = state.activeServer === 'KING' ? 'ACTIVE PRIMARY' : 'STANDBY READY';
+      } else {
+        kingCard.className = 'server-card outage';
+        kingStatus.innerHTML = '<span style="color: var(--danger);"><i class="fa-solid fa-triangle-exclamation"></i> OUTAGE (Unresponsive)</span>';
+        kingRoleBadge.className = 'badge badge-danger';
+        kingRoleBadge.textContent = 'NODE DOWN (OFFLINE)';
+      }
+
+      // Update Queen Card
+      const queenCard = document.getElementById('queen-server-card');
+      const queenStatus = document.getElementById('queen-readiness-status');
+      const queenRoleBadge = document.getElementById('queen-role-badge');
+
+      if (isQueenActive) {
+        queenCard.className = 'server-card active-primary';
+        queenStatus.innerHTML = '<span style="color: var(--success);"><i class="fa-solid fa-bolt"></i> PROMOTED PRIMARY (Routing Traffic)</span>';
+        queenRoleBadge.className = 'badge badge-success';
+        queenRoleBadge.textContent = 'PROMOTED PRIMARY (ACTIVE)';
+      } else {
+        queenCard.className = 'server-card';
+        queenStatus.innerHTML = '<span style="color: var(--purple);"><i class="fa-solid fa-clock"></i> HOT STANDBY (Replicating)</span>';
+        queenRoleBadge.className = 'badge badge-purple';
+        queenRoleBadge.textContent = 'SECONDARY STANDBY';
+      }
+
+      // Traffic route indicator
+      const routeText = document.getElementById('active-traffic-route');
+      if (state.activeServer === 'KING') {
+        routeText.innerHTML = '<span style="color: #34d399;"><i class="fa-solid fa-arrow-right"></i> ROUTE &rarr; KING (AWS Mumbai)</span>';
+      } else {
+        routeText.innerHTML = '<span style="color: #60a5fa;"><i class="fa-solid fa-arrow-right"></i> ROUTE &rarr; QUEEN (GCP Bangalore)</span>';
+      }
+
+      // Latencies
+      document.getElementById('live-ping-val').textContent = isKingOnline ? `${state.king.pingMs} ms` : '0 ms (Timeout)';
+      document.getElementById('live-lag-val').textContent = `${state.queen.syncLagMs || 6} ms`;
+
+      // Top Cluster badge
+      const overallBadge = document.getElementById('cluster-overall-badge');
+      if (isKingOnline && state.activeServer === 'KING') {
+        overallBadge.className = 'badge badge-success';
+        overallBadge.innerHTML = '<span class="pulse-dot-green"></span> CLUSTER: 100% HEALTHY';
+      } else if (isQueenActive) {
+        overallBadge.className = 'badge badge-warning';
+        overallBadge.innerHTML = '<i class="fa-solid fa-shield-halved"></i> FAILOVER ACTIVE (QUEEN)';
+      } else {
+        overallBadge.className = 'badge badge-danger';
+        overallBadge.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> FAILOVER IN PROGRESS';
+      }
+
+      // Render SMS Logs
+      renderSMSLogs(state.smsLogs || []);
+    }
+
+    function renderSMSLogs(logs) {
+      const container = document.getElementById('sms-logs-container');
+      if (logs.length === 0) {
+        container.innerHTML = '<p class="text-muted" style="font-size: 0.85rem;">No SMS alerts generated yet.</p>';
+        return;
+      }
+
+      container.innerHTML = logs.map(l => `
+        <div class="sms-alert-item">
+          <div class="flex justify-between items-center" style="margin-bottom: 0.35rem;">
+            <strong style="color: var(--primary);"><i class="fa-solid fa-mobile-screen"></i> SMS Dispatched to ${l.recipient}</strong>
+            <span class="badge badge-success" style="font-size: 0.7rem;">${l.status}</span>
+          </div>
+          <div style="color: #334155; font-weight: 500;">${l.message}</div>
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">
+            ${App.formatDateTime(l.timestamp)}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function simulateKingOutage() {
+      HAServer.simulateKingOutage();
+    }
+
+    function restoreKingServer() {
+      HAServer.restoreKing(true);
+    }
+
+    function manualPromoteQueen() {
+      HAServer.switchActiveServer('QUEEN');
+      Notifications.showToast('Manual Failover Test', 'Switched active traffic route to QUEEN server.', 'info');
+    }
+  </script>
+</body>
+</html>
+

@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rider Wallet & Payouts - Smart Store Delivery</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/rider.css">
+</head>
+<body class="dashboard-layout">
+
+  <!-- Sidebar -->
+  <aside class="dashboard-sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon" style="background: linear-gradient(135deg, #10b981, #059669);">
+        <i class="fa-solid fa-bicycle"></i>
+      </div>
+      <div class="brand-text">
+        <h2>instaa</h2>
+        <span style="font-size: 0.7rem; letter-spacing: 0.5px;">GROCERIES MADE EASIER</span>
+      </div>
+    </div>
+
+    <div class="sidebar-role-badge">
+      <i class="fa-solid fa-helmet-safety"></i>
+      <span>Logged in as <strong>Instaa Rider</strong></span>
+    </div>
+
+    <ul class="sidebar-nav">
+      <div class="nav-section-title">Operations</div>
+      <li><a href="rider-dashboard.html"><i class="fa-solid fa-gauge-high"></i> Dashboard</a></li>
+      <li><a href="available-orders.html"><i class="fa-solid fa-satellite-dish"></i> Available Requests</a></li>
+      <li><a href="active-delivery.html"><i class="fa-solid fa-map-location-dot"></i> Active Delivery</a></li>
+      <li><a href="rider-wallet.html" class="active"><i class="fa-solid fa-wallet"></i> My Earnings & Wallet</a></li>
+      <li><a href="rider-history.html"><i class="fa-solid fa-clock-rotate-left"></i> Delivery History</a></li>
+    </ul>
+
+    <div class="sidebar-user">
+      <div class="user-profile-info">
+        <img src="" alt="Rider" class="user-profile-avatar user-avatar" onerror="this.src='https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80'">
+        <div class="user-profile-text">
+          <div class="user-name">Loading...</div>
+          <div class="user-role">Rider Partner</div>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="Auth.logoutUser()" title="Logout">
+        <i class="fa-solid fa-power-off"></i>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dashboard-main">
+    <header class="dashboard-header">
+      <div class="header-left">
+        <button class="mobile-toggle" id="mobile-sidebar-toggle">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="header-title-box">
+          <h1>Rider Earnings & Wallet Ledger</h1>
+          <p>Verified delivery payout history with zero duplicate credit guarantee</p>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <button class="btn btn-success" onclick="openPayoutModal()">
+          <i class="fa-solid fa-money-bill-transfer"></i> Withdraw to Bank
+        </button>
+      </div>
+    </header>
+
+    <div class="dashboard-content">
+      
+      <!-- 4 Wallet Summary Cards -->
+      <div class="metrics-grid">
+        <div class="stat-card">
+          <div class="stat-content">
+            <span class="stat-label">Available Balance</span>
+            <div class="stat-value text-success" id="wallet-available-bal">₹0.00</div>
+            <div class="stat-hint"><i class="fa-solid fa-circle-check text-success"></i> Ready for instant transfer</div>
+          </div>
+          <div class="stat-icon stat-icon-green"><i class="fa-solid fa-wallet"></i></div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-content">
+            <span class="stat-label">Today's Earnings</span>
+            <div class="stat-value" id="wallet-today-bal">₹0.00</div>
+            <div class="stat-hint"><i class="fa-solid fa-bolt text-warning"></i> Trips completed today</div>
+          </div>
+          <div class="stat-icon stat-icon-blue"><i class="fa-solid fa-calendar-day"></i></div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-content">
+            <span class="stat-label">Total Lifetime Earnings</span>
+            <div class="stat-value" id="wallet-total-bal">₹0.00</div>
+            <div class="stat-hint"><i class="fa-solid fa-award text-purple"></i> All-time delivery fees</div>
+          </div>
+          <div class="stat-icon stat-icon-purple"><i class="fa-solid fa-trophy"></i></div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-content">
+            <span class="stat-label">Pending / Withheld</span>
+            <div class="stat-value" id="wallet-pending-bal">₹0.00</div>
+            <div class="stat-hint"><i class="fa-solid fa-clock text-muted"></i> In-transit / Return verification</div>
+          </div>
+          <div class="stat-icon stat-icon-amber"><i class="fa-solid fa-hourglass-half"></i></div>
+        </div>
+      </div>
+
+      <!-- Payment Flow & Damaged Items Policy Card -->
+      <div class="card" style="background: linear-gradient(135deg, #f8fafc 0%, #ecfdf5 100%); margin-bottom: 2rem;">
+        <div class="card-body">
+          <div class="flex items-center justify-between" style="flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.5rem;">
+            <div class="flex items-center gap-2">
+              <i class="fa-solid fa-shield-halved text-success" style="font-size: 1.25rem;"></i>
+              <h4 style="font-size: 1.05rem; margin: 0;">Instaa Rider Payout & Damage Resolution Policy</h4>
+            </div>
+            <span class="badge badge-success"><i class="fa-solid fa-bolt"></i> Instant Razorpay Transfer</span>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; margin-top: 0.75rem;">
+            <div style="background: white; border: 1px solid var(--border-light); border-radius: 8px; padding: 0.85rem;">
+              <strong style="color: var(--success); display: block; margin-bottom: 0.25rem;">
+                <i class="fa-solid fa-circle-check"></i> Case i: No Damage
+              </strong>
+              <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0; line-height: 1.4;">
+                Customer inspects groceries and shares 4-digit Delivery OTP. Once entered into the app, your delivery fee (₹40 local / ₹70 inter-town) is immediately credited to your virtual wallet.
+              </p>
+            </div>
+            <div style="background: white; border: 1px solid var(--border-light); border-radius: 8px; padding: 0.85rem;">
+              <strong style="color: var(--danger); display: block; margin-bottom: 0.25rem;">
+                <i class="fa-solid fa-triangle-exclamation"></i> Case ii: Damaged Items
+              </strong>
+              <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0; line-height: 1.4;">
+                If a customer rejects damaged goods, delivery pay is withheld by Admin while you return items to the store. Hand items to the shop manager, enter their 6-digit Shop Return OTP, and your pay is instantly released!
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ledger Transactions Table -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i class="fa-solid fa-receipt text-primary"></i> Wallet Ledger & Transaction Log
+          </h3>
+          <span class="badge badge-success"><i class="fa-solid fa-lock"></i> Audited Ledger</span>
+        </div>
+        <div class="card-body" style="padding: 0;">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Transaction ID</th>
+                  <th>Order Reference</th>
+                  <th>Description</th>
+                  <th>Type</th>
+                  <th>Amount</th>
+                  <th>Timestamp</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="rider-ledger-tbody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Payout Modal -->
+  <div class="modal-backdrop" id="payout-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-icon-badge" style="background: var(--success-light); color: var(--success);">
+          <i class="fa-solid fa-money-bill-transfer"></i>
+        </div>
+        <h3 class="modal-title">Withdraw Delivery Earnings</h3>
+        <p class="modal-subtitle">Transfer funds directly to your registered bank / UPI</p>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Available for Withdrawal</label>
+          <div style="font-size: 1.5rem; font-weight: 800; color: var(--success);" id="modal-max-payout">₹0.00</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="payout-amount-input">Withdrawal Amount (₹)</label>
+          <input type="number" id="payout-amount-input" class="form-control" placeholder="Enter amount" min="50" step="10">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="payout-payout-target">Transfer Destination</label>
+          <select id="payout-payout-target" class="form-control">
+            <option value="UPI">UPI ID: rider@okaxis (Instant Transfer)</option>
+            <option value="BANK">HDFC Bank A/C: •••• 4092 (NEFT)</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closePayoutModal()">Cancel</button>
+        <button class="btn btn-success" onclick="processRiderPayout()">
+          <i class="fa-solid fa-check"></i> Confirm Withdrawal
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="../js/storage.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/products.js"></script>
+  <script src="../js/cart.js"></script>
+  <script src="../js/orders.js"></script>
+  <script src="../js/dispatch.js"></script>
+  <script src="../js/otp.js"></script>
+  <script src="../js/wallet.js"></script>
+  <script src="../js/notifications.js"></script>
+  <script src="../js/app.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const user = Auth.checkAuth(['rider']);
+      if (!user) return;
+
+      renderWalletData();
+    });
+
+    function renderWalletData() {
+      const user = Auth.getCurrentUser();
+      const wallet = Wallet.getRiderWallet(user.id);
+
+      document.getElementById('wallet-available-bal').textContent = App.formatCurrency(wallet.availableBalance);
+      document.getElementById('wallet-today-bal').textContent = App.formatCurrency(wallet.todayEarnings);
+      document.getElementById('wallet-total-bal').textContent = App.formatCurrency(wallet.totalEarnings);
+      document.getElementById('wallet-pending-bal').textContent = App.formatCurrency(wallet.pendingBalance || 0);
+
+      // Render Ledger Table
+      const txns = Wallet.getTransactionsByUserId(user.id);
+      const tbody = document.getElementById('rider-ledger-tbody');
+
+      if (txns.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
+              No transactions recorded yet. Completed trips will appear here with unique ledger IDs.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = txns.map(t => `
+        <tr>
+          <td><code style="font-weight: 700; color: var(--text-main);">${t.id}</code></td>
+          <td>${t.orderId ? `<strong style="color: var(--primary);">#${t.orderId}</strong>` : '--'}</td>
+          <td>${t.description}</td>
+          <td>
+            <span class="badge ${t.type === 'CREDIT' ? 'badge-success' : 'badge-danger'}">
+              <i class="fa-solid ${t.type === 'CREDIT' ? 'fa-arrow-down-left' : 'fa-arrow-up-right'}"></i> ${t.type}
+            </span>
+          </td>
+          <td>
+            <strong style="color: ${t.type === 'CREDIT' ? 'var(--success)' : 'var(--danger)'};">
+              ${t.type === 'CREDIT' ? '+' : '-'}${App.formatCurrency(t.amount)}
+            </strong>
+          </td>
+          <td>${App.formatDateTime(t.timestamp)}</td>
+          <td><span class="badge badge-success">${t.status}</span></td>
+        </tr>
+      `).join('');
+    }
+
+    function openPayoutModal() {
+      const user = Auth.getCurrentUser();
+      const wallet = Wallet.getRiderWallet(user.id);
+      document.getElementById('modal-max-payout').textContent = App.formatCurrency(wallet.availableBalance);
+      document.getElementById('payout-amount-input').value = Math.min(wallet.availableBalance, 500);
+      document.getElementById('payout-modal').style.display = 'flex';
+    }
+
+    function closePayoutModal() {
+      document.getElementById('payout-modal').style.display = 'none';
+    }
+
+    function processRiderPayout() {
+      const user = Auth.getCurrentUser();
+      const amount = document.getElementById('payout-amount-input').value;
+      const res = Wallet.requestPayout(user.id, 'rider', amount);
+
+      if (res.success) {
+        closePayoutModal();
+        Notifications.showToast('Payout Processed', res.message, 'success');
+        renderWalletData();
+      } else {
+        alert(res.message);
+      }
+    }
+  </script>
+</body>
+</html>

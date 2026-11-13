@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Real-Time Order Tracking & Live GPS - instaa</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/customer.css">
+  <style>
+    #customer-realtime-map {
+      height: 380px;
+      width: 100%;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-light);
+      z-index: 10;
+    }
+    .gps-sharing-banner {
+      background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%);
+      border: 1.5px solid #10b981;
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .gps-hud-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 0.75rem;
+      background: #0f172a;
+      padding: 0.85rem 1rem;
+      border-radius: var(--radius-md);
+      color: #fff;
+      margin-top: 0.75rem;
+    }
+    .gps-hud-item {
+      display: flex;
+      flex-direction: column;
+    }
+    .gps-hud-item span {
+      font-size: 0.7rem;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .gps-hud-item strong {
+      font-size: 1.05rem;
+      font-family: var(--font-heading);
+      color: #38bdf8;
+    }
+    .pulse-ring {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 0 rgba(16, 185, 129, 0.4);
+      animation: pulseAnimation 2s infinite;
+    }
+    @keyframes pulseAnimation {
+      0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+      70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+  </style>
+</head>
+<body class="dashboard-layout">
+
+  <!-- Sidebar -->
+  <aside class="dashboard-sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon" style="background: linear-gradient(135deg, #10b981, #059669);">
+        <i class="fa-solid fa-bicycle"></i>
+      </div>
+      <div class="brand-text">
+        <h2>instaa</h2>
+        <span style="font-size: 0.7rem; letter-spacing: 0.5px;">GROCERIES MADE EASIER</span>
+      </div>
+    </div>
+
+    <div class="sidebar-role-badge">
+      <i class="fa-solid fa-circle-user"></i>
+      <span>Logged in as <strong>Customer</strong></span>
+    </div>
+
+    <ul class="sidebar-nav">
+      <div class="nav-section-title">Shop & Deliver</div>
+      <li><a href="customer-dashboard.html"><i class="fa-solid fa-house"></i> Home Dashboard</a></li>
+      <li><a href="products.html"><i class="fa-solid fa-store"></i> Browse Products</a></li>
+      <li>
+        <a href="cart.html">
+          <i class="fa-solid fa-cart-shopping"></i> My Basket
+          <span class="nav-badge cart-badge">0</span>
+        </a>
+      </li>
+      <li><a href="order-tracking.html" class="active"><i class="fa-solid fa-route"></i> Live Tracking</a></li>
+      <li><a href="order-history.html"><i class="fa-solid fa-clock-rotate-left"></i> Order History</a></li>
+    </ul>
+
+    <div class="sidebar-user">
+      <div class="user-profile-info">
+        <img src="" alt="User" class="user-profile-avatar user-avatar" onerror="this.src='https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80'">
+        <div class="user-profile-text">
+          <div class="user-name">Loading...</div>
+          <div class="user-role">Customer</div>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="Auth.logoutUser()" title="Logout">
+        <i class="fa-solid fa-power-off"></i>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dashboard-main">
+    <header class="dashboard-header">
+      <div class="header-left">
+        <button class="mobile-toggle" id="mobile-sidebar-toggle">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="header-title-box">
+          <h1>Live Order Tracking</h1>
+          <p id="tracking-subtitle">Tracking Order Details in Real Time</p>
+        </div>
+      </div>
+      <div class="header-right flex items-center gap-2">
+        <span id="multi-device-badge" class="badge badge-success"><i class="fa-solid fa-satellite-dish"></i> Multi-Device Sync ON</span>
+        <button class="btn btn-primary btn-sm" onclick="TrackingAPI.showMultiDeviceConnectModal(currentOrderId)">
+          <i class="fa-solid fa-mobile-screen"></i> 📱 Connect Phone / Multi-Device
+        </button>
+        <button class="btn btn-outline btn-sm" onclick="renderOrderTracking()">
+          <i class="fa-solid fa-rotate"></i> Refresh State
+        </button>
+      </div>
+    </header>
+
+    <div class="dashboard-content">
+      <div class="tracking-container" id="tracking-layout-grid">
+        
+        <!-- Left: Stepper & Map Simulation -->
+        <div>
+          <!-- Customer OTP Display Card -->
+          <div class="customer-otp-banner" id="otp-banner-box">
+            <div class="otp-title">
+              <i class="fa-solid fa-key"></i> Your Delivery Handover OTP
+            </div>
+            <div class="otp-code-display" id="display-customer-otp">------</div>
+            <div class="otp-help">
+              <i class="fa-solid fa-shield-halved"></i>
+              <span>Provide this 6-digit code to the delivery rider <strong>only</strong> when they reach your doorstep.</span>
+            </div>
+          </div>
+
+          <!-- Animated Stepper Card -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">
+                <i class="fa-solid fa-bars-progress text-primary"></i> Order Progress Timeline
+              </h3>
+              <span id="order-current-badge"></span>
+            </div>
+            <div class="card-body">
+              <div class="tracking-stepper" id="tracking-stepper-container">
+                <!-- Dynamically populated steps -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Customer Live GPS Location Sharing Card (New Feature) -->
+          <div class="gps-sharing-banner">
+            <div>
+              <div class="flex items-center gap-2" style="margin-bottom: 0.35rem;">
+                <span class="pulse-ring"></span>
+                <strong style="color: #065f46; font-size: 1.05rem;">Real-Time Location API & GPS Sharing</strong>
+                <span class="badge badge-success" id="customer-gps-status-badge">Live GPS Active</span>
+              </div>
+              <p style="font-size: 0.85rem; color: #047857; margin: 0; line-height: 1.4;" id="customer-gps-desc">
+                Share your exact doorstep GPS coordinates with the delivery rider to ensure zero delivery delays.
+              </p>
+              <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.4rem;" id="customer-coords-display">
+                <i class="fa-solid fa-crosshairs text-success"></i> <strong>Coordinates:</strong> <code id="display-lat-lng">13.208000° N, 77.719000° E</code> • Landmark: <span id="display-landmark">Main Gate</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <button class="btn btn-primary btn-sm" id="btn-share-location" onclick="handleShareCustomerLocation()">
+                <i class="fa-solid fa-location-crosshairs"></i> Share My Live GPS Location
+              </button>
+              <button class="btn btn-outline btn-sm" id="btn-continuous-gps" onclick="handleToggleContinuousSharing()" style="border-color: #10b981; color: #065f46;">
+                <i class="fa-solid fa-tower-broadcast"></i> Stream GPS Continuously (watchPosition)
+              </button>
+              <button class="btn btn-outline btn-sm" onclick="TrackingAPI.showMultiDeviceConnectModal(currentOrderId)" title="Open on Mobile Phone via QR code">
+                <i class="fa-solid fa-qrcode"></i> 📱 Open on Mobile Phone
+              </button>
+              <button class="btn btn-outline btn-sm" onclick="handleShareTrackingLink()" title="Share live tracking with family/friends">
+                <i class="fa-solid fa-share-nodes"></i> Share Live Link
+              </button>
+              <button class="btn btn-outline btn-sm" onclick="openCustomerGoogleMaps()" title="Open destination in Google Maps">
+                <i class="fa-brands fa-google text-primary"></i> GMap
+              </button>
+            </div>
+          </div>
+
+          <!-- Real-Time Interactive Leaflet Map & Radar HUD -->
+          <div class="card">
+            <div class="card-header flex justify-between items-center">
+              <h3 class="card-title">
+                <i class="fa-solid fa-map-location-dot text-primary"></i> Real-Time Live Delivery Radar
+              </h3>
+              <div class="flex items-center gap-2">
+                <span class="badge badge-primary" id="map-status-pill"><i class="fa-solid fa-satellite-dish"></i> Live GPS Feed</span>
+                <button class="btn btn-outline btn-sm" onclick="recenterCustomerMap()" title="Recenter Map View">
+                  <i class="fa-solid fa-arrows-to-dot"></i> Recenter
+                </button>
+              </div>
+            </div>
+            <div class="card-body" style="padding: 1rem;">
+              <!-- Leaflet Map Container -->
+              <div style="margin-bottom:.6rem;"><span id="live-gps-badge" class="badge badge-secondary">Waiting for rider live location</span></div>
+              <div id="customer-realtime-map"></div>
+
+              <!-- Real-Time HUD Bar -->
+              <div class="gps-hud-bar">
+                <div class="gps-hud-item">
+                  <span>Rider Speed</span>
+                  <strong id="hud-rider-speed">-- km/h</strong>
+                </div>
+                <div class="gps-hud-item">
+                  <span>Distance Remaining</span>
+                  <strong id="hud-rider-distance">-- KM</strong>
+                </div>
+                <div class="gps-hud-item">
+                  <span>Dynamic ETA</span>
+                  <strong id="hud-rider-eta">-- mins</strong>
+                </div>
+                <div class="gps-hud-item">
+                  <span>Rider Status</span>
+                  <strong id="hud-rider-status" style="color: #34d399;">On Schedule</strong>
+                </div>
+                <div class="gps-hud-item">
+                  <span>GPS Precision</span>
+                  <strong id="hud-gps-accuracy" style="color: #a78bfa;">±6m (High)</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Assigned Rider, Store, & Order Items Summary -->
+        <div>
+          <!-- Assigned Rider Card -->
+          <div class="assigned-rider-card" id="rider-details-card">
+            <h4 style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 1rem;">
+              <i class="fa-solid fa-motorcycle"></i> Assigned Delivery Partner
+            </h4>
+            <div id="rider-card-content">
+              <div style="text-align: center; padding: 1rem; color: var(--text-muted);">
+                <i class="fa-solid fa-satellite-dish fa-spin" style="font-size: 2rem; color: var(--primary); margin-bottom: 0.5rem; display: block;"></i>
+                <p>Waiting for store preparation and rider broadcast...</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Order Summary Card -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title"><i class="fa-solid fa-receipt text-primary"></i> Order Items</h3>
+              <span id="order-id-label" style="font-weight: 700;">#ORD-XXXX</span>
+            </div>
+            <div class="card-body">
+              <div id="tracking-items-list" style="margin-bottom: 1rem;"></div>
+              <div class="summary-row total-row" style="margin-top: 0.5rem; padding-top: 0.75rem;">
+                <span>Total Paid</span>
+                <span id="tracking-total-amount">₹0.00</span>
+              </div>
+              <div style="margin-top: 1rem; font-size: 0.8rem; color: var(--text-muted);">
+                <strong>Delivery Address:</strong><br>
+                <span id="tracking-address-text">--</span>
+              </div>
+            </div>
+            <div class="card-footer" style="padding: 1rem 1.75rem; background: var(--bg-alt); text-align: center;" id="cancel-action-container">
+              <!-- Cancel order button if permitted -->
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- Scripts -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="../js/storage.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/products.js"></script>
+  <script src="../js/cart.js"></script>
+  <script src="../js/orders.js"></script>
+  <script src="../js/dispatch.js"></script>
+  <script src="../js/otp.js"></script>
+  <script src="../js/wallet.js"></script>
+  <script src="../js/notifications.js"></script>
+  <script src="../js/tracking-api.js"></script>
+  <script src="../js/app.js"></script>
+
+  <script>
+    let currentOrderId = null;
+    let customerMapInstance = null;
+    let storeMarker = null;
+    let riderMarker = null;
+    let customerMarker = null;
+    let routeLine = null;
+    let accuracyCircle = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      Auth.checkAuth(['customer']);
+
+      // Get orderId from query string or latest customer order
+      const urlParams = new URLSearchParams(window.location.search);
+      currentOrderId = urlParams.get('orderId');
+
+      if (!currentOrderId) {
+        const user = Auth.getCurrentUser();
+        const myOrders = Orders.getByCustomer(user.id);
+        if (myOrders.length > 0) {
+          currentOrderId = myOrders[0].id;
+        }
+      }
+
+      renderOrderTracking();
+    });
+
+    function renderOrderTracking() {
+      if (!currentOrderId) {
+        document.getElementById('tracking-layout-grid').innerHTML = `
+          <div class="card" style="grid-column: 1 / -1; text-align: center; padding: 4rem;">
+            <h3>No orders found to track</h3>
+            <p style="color: var(--text-muted); margin: 0.5rem 0 1.5rem;">Place an order from local stores to view live progress.</p>
+            <a href="products.html" class="btn btn-primary">Start Shopping</a>
+          </div>
+        `;
+        return;
+      }
+
+      const order = Orders.getById(currentOrderId);
+      if (!order) {
+        alert('Order not found.');
+        return;
+      }
+
+      // Initialize or get tracking session from TrackingAPI
+      const session = TrackingAPI.getSession(currentOrderId);
+
+      document.getElementById('tracking-subtitle').textContent = `Order #${order.id} • Real-Time GPS Tracking Active`;
+      document.getElementById('order-id-label').textContent = `#${order.id}`;
+      document.getElementById('display-customer-otp').textContent = order.customerOtp || '------';
+      document.getElementById('order-current-badge').innerHTML = App.getStatusBadge(order.status);
+      document.getElementById('tracking-total-amount').textContent = App.formatCurrency(order.total);
+      document.getElementById('tracking-address-text').textContent = order.deliveryAddress;
+
+      // Update Location Sharing Banner UI
+      updateCustomerLocationBanner(session);
+
+      // Render Items List
+      const itemsContainer = document.getElementById('tracking-items-list');
+      itemsContainer.innerHTML = order.items.map(item => `
+        <div class="flex justify-between items-center" style="font-size: 0.85rem; margin-bottom: 0.4rem;">
+          <span>${item.name} <strong style="color: var(--primary);">x${item.qty}</strong></span>
+          <strong>₹${item.total.toFixed(2)}</strong>
+        </div>
+      `).join('');
+
+      // Render Assigned Rider Card
+      const riderContent = document.getElementById('rider-card-content');
+      if (order.assignedRiderId) {
+        riderContent.innerHTML = `
+          <div class="rider-info-header">
+            <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80" class="rider-avatar-md" alt="${order.assignedRiderName}">
+            <div>
+              <h4 style="font-size: 1.1rem; margin-bottom: 0.2rem;">${order.assignedRiderName}</h4>
+              <p style="font-size: 0.8rem; color: var(--text-muted);"><i class="fa-solid fa-motorcycle"></i> ${order.assignedRiderVehicle || 'Standard Electric Bike'}</p>
+              <span class="badge badge-success" style="margin-top: 0.35rem;"><i class="fa-solid fa-satellite-dish"></i> Live GPS Transmitter Online</span>
+            </div>
+          </div>
+          <div class="rider-contact-actions">
+            <button class="btn btn-primary btn-sm btn-block" onclick="alert('Calling rider ${order.assignedRiderName} at ${order.assignedRiderPhone || '+91 98701 11223'}...')">
+              <i class="fa-solid fa-phone"></i> Call Rider (${order.assignedRiderPhone || 'Direct'})
+            </button>
+          </div>
+        `;
+      } else {
+        riderContent.innerHTML = `
+          <div style="text-align: center; padding: 1rem; color: var(--text-muted);">
+            <i class="fa-solid fa-satellite-dish fa-spin" style="font-size: 2rem; color: var(--primary); margin-bottom: 0.5rem; display: block;"></i>
+            <p><strong>Rider Dispatch in Progress</strong></p>
+            <span style="font-size: 0.8rem;">Store will broadcast request to nearby riders once goods are packed.</span>
+          </div>
+        `;
+      }
+
+      // Render Visual Stepper
+      const steps = [
+        { key: 'NEW', title: 'Order Placed & Paid', desc: `Payment confirmed via ${order.payment?.method || 'GPAY'}` },
+        { key: 'ACCEPTED', title: 'Store Accepted', desc: `${order.storeName} verified items (Address hidden for privacy)` },
+        { key: 'PREPARING', title: 'Packing Items', desc: 'Packing fresh groceries in rural warehouse' },
+        { key: 'READY_FOR_PICKUP', title: 'Ready for Pickup', desc: order.isInterTown ? 'Broadcast to town riders with priority' : 'Broadcasted to online riders' },
+        { key: 'RIDER_ASSIGNED', title: 'Rider Assigned', desc: order.assignedRiderName ? `Claimed by Rider ${order.assignedRiderName} (2-min idle monitoring)` : 'Assigning rider' },
+        { key: 'DISPATCHED', title: 'Dispatched & On the Way', desc: 'Store Handover OTP verified, rider en route with Google Map' },
+        { key: 'DELIVERED', title: order.isDamaged ? 'Damaged Item Reported (Case ii)' : 'Delivered Successfully (Case i)', desc: order.isDamaged ? 'Damaged goods handed back to rider for return' : 'Customer Delivery OTP verified at doorstep' }
+      ];
+
+      if (order.status === 'RETURN_IN_PROGRESS') {
+        steps.push({ key: 'RETURN_IN_PROGRESS', title: 'Return in Progress', desc: 'Rider returning damaged items to store. Pay withheld.' });
+      } else if (order.status === 'RETURNED_TO_STORE' || order.status === 'REFUNDED') {
+        steps.push({ key: 'RETURNED_TO_STORE', title: 'Returned to Store & Refunded', desc: `Shop Return OTP verified. Refund of ₹${order.refundAmount} queued via Razorpay (1-2 days).` });
+      }
+
+      const statusOrder = ['NEW', 'ACCEPTED', 'PREPARING', 'READY_FOR_PICKUP', 'RIDER_ASSIGNED', 'DISPATCHED', 'DELIVERED', 'RETURN_IN_PROGRESS', 'RETURNED_TO_STORE'];
+      const currentIndex = statusOrder.indexOf(order.status);
+
+      const stepperContainer = document.getElementById('tracking-stepper-container');
+      stepperContainer.innerHTML = steps.map((step, idx) => {
+        let stateClass = '';
+        if (order.status === 'CANCELLED') {
+          stateClass = idx === 0 ? 'completed' : '';
+        } else if (idx < currentIndex) {
+          stateClass = 'completed';
+        } else if (idx === currentIndex) {
+          stateClass = 'active';
+        }
+
+        return `
+          <div class="step-item ${stateClass}">
+            <div class="step-circle">
+              <i class="fa-solid ${stateClass === 'completed' ? 'fa-check' : 'fa-circle-dot'}"></i>
+            </div>
+            <div class="step-content">
+              <h4>${step.title}</h4>
+              <p>${step.desc}</p>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Render Leaflet Map & HUD
+      initOrUpdateCustomerMap(session);
+
+      // Subscribe to real-time updates from TrackingAPI
+      TrackingAPI.subscribe(currentOrderId, (updatedSession) => {
+        updateMapElements(updatedSession);
+        updateCustomerLocationBanner(updatedSession);
+      });
+
+      // Rider position now comes from the rider's REAL phone GPS (no fake movement).
+      // Add ?demo=1 to the URL to see the old demo simulation.
+      if (order.status === ORDER_STATUS.DISPATCHED && new URLSearchParams(location.search).get('demo') === '1' && !TrackingAPI.hasRecentRealGps(currentOrderId)) {
+        TrackingAPI.startLiveRiderSimulation(currentOrderId, (simSession) => updateMapElements(simSession));
+      }
+      setInterval(updateLiveBadge, 1000);
+
+      // Action container: Damage Reporting or Cancellation
+      const cancelBox = document.getElementById('cancel-action-container');
+      if (order.status === ORDER_STATUS.DELIVERED) {
+        cancelBox.innerHTML = `
+          <div class="flex gap-2 justify-center">
+            <button class="btn btn-outline btn-sm" style="color: var(--danger); border-color: var(--danger);" onclick="openReportDamageModal()">
+              <i class="fa-solid fa-triangle-exclamation"></i> Report Damaged Item (Case ii)
+            </button>
+          </div>
+        `;
+      } else if (order.status === 'RETURN_IN_PROGRESS') {
+        cancelBox.innerHTML = `
+          <div class="alert-box alert-warning" style="margin: 0;">
+            <i class="fa-solid fa-rotate-left"></i>
+            <span><strong>Case ii Active:</strong> Damaged item returned to shop. Refund of ₹${order.refundAmount.toFixed(2)} will reflect in 1-2 days.</span>
+          </div>
+        `;
+      } else if (order.status === 'RETURNED_TO_STORE') {
+        cancelBox.innerHTML = `
+          <div class="alert-box alert-success" style="margin: 0;">
+            <i class="fa-solid fa-circle-check"></i>
+            <span><strong>Refund Completed:</strong> ₹${order.refundAmount.toFixed(2)} credited back to your GPay account via Razorpay.</span>
+          </div>
+        `;
+      } else if (![ORDER_STATUS.DISPATCHED, ORDER_STATUS.CANCELLED].includes(order.status)) {
+        cancelBox.innerHTML = `
+          <button class="btn btn-outline btn-sm" style="color: var(--danger); border-color: var(--danger);" onclick="cancelCurrentOrder()">
+            <i class="fa-solid fa-ban"></i> Cancel Order
+          </button>
+        `;
+      } else {
+        cancelBox.innerHTML = `<span style="font-size: 0.8rem; color: var(--text-light);">Delivery in transit</span>`;
+      }
+    }
+
+    // Update Customer Location Banner Details
+    function updateCustomerLocationBanner(session) {
+      const cust = session.customerLocation;
+      const statusBadge = document.getElementById('customer-gps-status-badge');
+      const desc = document.getElementById('customer-gps-desc');
+      const coordsDisplay = document.getElementById('display-lat-lng');
+      const landmarkDisplay = document.getElementById('display-landmark');
+
+      if (coordsDisplay) {
+        coordsDisplay.textContent = `${cust.lat.toFixed(5)}° N, ${cust.lng.toFixed(5)}° E`;
+      }
+      if (landmarkDisplay) {
+        landmarkDisplay.textContent = cust.landmark || 'Standard Area Pin';
+      }
+
+      if (cust.isLiveShared) {
+        statusBadge.className = 'badge badge-success';
+        statusBadge.innerHTML = '<i class="fa-solid fa-satellite-dish"></i> Live GPS Shared with Rider';
+        desc.textContent = `Your high-accuracy GPS pin is actively shared with Rider ${session.orderId ? 'Alex Kumar' : ''}. Rider can navigate straight to your doorstep without asking.`;
+      } else {
+        statusBadge.className = 'badge badge-warning';
+        statusBadge.innerHTML = '<i class="fa-solid fa-location-pin"></i> Standard Pincode Geocoding';
+        desc.textContent = 'Click "Share My Live GPS Location" to transmit your exact doorstep GPS pin (+/- 5m) to your delivery rider.';
+      }
+    }
+
+    /**
+     * INITIALIZE REAL-TIME LEAFLET MAP
+     */
+    function initOrUpdateCustomerMap(session) {
+      const storeCoords = [session.storeLocation.lat, session.storeLocation.lng];
+      const customerCoords = [session.customerLocation.lat, session.customerLocation.lng];
+      const riderCoords = [session.riderLocation.lat, session.riderLocation.lng];
+
+      if (!customerMapInstance) {
+        customerMapInstance = L.map('customer-realtime-map').setView(riderCoords, 14);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '© OpenStreetMap • Instaa Real-Time GPS Tracking API'
+        }).addTo(customerMapInstance);
+      }
+
+      updateMapElements(session);
+      customerMapInstance.on('dragstart', () => { followRider = false; });
+    }
+
+    let followRider = true;
+    let animFrame = null;
+    let lastRouteFetch = 0;
+    let lastRiderPos = null;
+
+    function makeIcon(bg, glow, icon, size) {
+      return L.divIcon({
+        html: `<div style="background:${bg}; color:#fff; border-radius:50%; width:${size}px; height:${size}px; display:flex; align-items:center; justify-content:center; box-shadow:0 0 14px ${glow}; border:2px solid #fff;"><i class="fa-solid ${icon}"></i></div>`,
+        className: 'custom-leaflet-marker', iconSize: [size, size], iconAnchor: [size / 2, size / 2]
+      });
+    }
+
+    // Smoothly glide the rider marker to the new GPS point (instead of jumping)
+    function glideRider(to) {
+      if (!riderMarker) return;
+      const from = riderMarker.getLatLng();
+      const start = performance.now(), dur = 1800;
+      if (animFrame) cancelAnimationFrame(animFrame);
+      const step = (t) => {
+        const k = Math.min(1, (t - start) / dur);
+        riderMarker.setLatLng([from.lat + (to[0] - from.lat) * k, from.lng + (to[1] - from.lng) * k]);
+        if (k < 1) animFrame = requestAnimationFrame(step);
+      };
+      animFrame = requestAnimationFrame(step);
+    }
+
+    // Real road route rider -> customer (OSRM public demo server). Falls back to a straight line.
+    async function refreshRoute(riderCoords, customerCoords) {
+      if (Date.now() - lastRouteFetch < 15000) return;
+      lastRouteFetch = Date.now();
+      try {
+        const r = await fetch(`https://router.project-osrm.org/route/v1/driving/${riderCoords[1]},${riderCoords[0]};${customerCoords[1]},${customerCoords[0]}?overview=full&geometries=geojson`);
+        const j = await r.json();
+        const line = j.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+        if (routeLine) customerMapInstance.removeLayer(routeLine);
+        routeLine = L.polyline(line, { color: '#2563eb', weight: 5, opacity: 0.85 }).addTo(customerMapInstance);
+      } catch (e) {
+        if (routeLine) customerMapInstance.removeLayer(routeLine);
+        routeLine = L.polyline([riderCoords, customerCoords], { color: '#2563eb', weight: 4, dashArray: '6, 8' }).addTo(customerMapInstance);
+      }
+    }
+
+    function updateLiveBadge() {
+      const el = document.getElementById('live-gps-badge');
+      if (!el) return;
+      const session = TrackingAPI.getSession(currentOrderId);
+      const r = session.riderLocation;
+      if (r.isRealGps && r.lastRealGpsAt) {
+        const age = Math.round((Date.now() - r.lastRealGpsAt) / 1000);
+        el.className = 'badge ' + (age < 15 ? 'badge-success' : 'badge-warning');
+        el.innerHTML = age < 15 ? `<i class="fa-solid fa-circle fa-beat-fade"></i> LIVE • rider GPS ${age}s ago` : `<i class="fa-solid fa-signal"></i> Rider GPS lost ${age}s ago`;
+      } else {
+        el.className = 'badge badge-secondary';
+        el.innerHTML = '<i class="fa-solid fa-hourglass-half"></i> Waiting for rider live location';
+      }
+    }
+
+    function updateMapElements(session) {
+      if (!customerMapInstance) return;
+
+      const storeCoords = [session.storeLocation.lat, session.storeLocation.lng];
+      const customerCoords = [session.customerLocation.lat, session.customerLocation.lng];
+      const riderCoords = [session.riderLocation.lat, session.riderLocation.lng];
+
+      document.getElementById('hud-rider-speed').textContent = `${session.riderLocation.speedKmh || 0} km/h`;
+      document.getElementById('hud-rider-distance').textContent = `${session.distanceRemainingKm} KM`;
+      document.getElementById('hud-rider-eta').textContent = `${session.etaMinutes} mins`;
+      document.getElementById('hud-gps-accuracy').textContent = `±${session.customerLocation.accuracyMeters || 6}m (High)`;
+
+      // Create markers once, then only move them
+      if (!storeMarker) storeMarker = L.marker(storeCoords, { icon: makeIcon('#2563eb', 'rgba(0,0,0,.3)', 'fa-store', 34) }).addTo(customerMapInstance);
+      storeMarker.bindPopup(`<b>${session.storeLocation.name}</b><br>${session.storeLocation.address}`);
+
+      if (!customerMarker) customerMarker = L.marker(customerCoords, { icon: makeIcon('#ef4444', 'rgba(239,68,68,.5)', 'fa-house', 34) }).addTo(customerMapInstance);
+      customerMarker.setLatLng(customerCoords);
+      customerMarker.bindPopup(`<b>Your Delivery Location</b><br>${session.customerLocation.address}`);
+
+      if (accuracyCircle) customerMapInstance.removeLayer(accuracyCircle);
+      if (session.customerLocation.isLiveShared) {
+        accuracyCircle = L.circle(customerCoords, { color: '#10b981', fillColor: '#10b981', fillOpacity: 0.15, radius: 35 }).addTo(customerMapInstance);
+      }
+
+      if (!riderMarker) {
+        riderMarker = L.marker(riderCoords, { icon: makeIcon('#10b981', 'rgba(16,185,129,.7)', 'fa-motorcycle', 40), zIndexOffset: 1000 }).addTo(customerMapInstance);
+        lastRiderPos = riderCoords;
+        customerMapInstance.fitBounds([riderCoords, customerCoords], { padding: [60, 60] });
+      } else if (!lastRiderPos || lastRiderPos[0] !== riderCoords[0] || lastRiderPos[1] !== riderCoords[1]) {
+        glideRider(riderCoords);
+        lastRiderPos = riderCoords;
+        if (followRider) customerMapInstance.panTo(riderCoords, { animate: true, duration: 1.5 });
+      }
+      riderMarker.bindPopup(`<b>Your delivery partner</b><br>${session.riderLocation.speedKmh || 0} km/h`);
+
+      refreshRoute(riderCoords, customerCoords);
+      updateLiveBadge();
+    }
+
+    function recenterCustomerMap() {
+      followRider = true;
+      const session = TrackingAPI.getSession(currentOrderId);
+      if (customerMapInstance && session) {
+        customerMapInstance.fitBounds([
+          [session.riderLocation.lat, session.riderLocation.lng],
+          [session.customerLocation.lat, session.customerLocation.lng]
+        ], { padding: [50, 50] });
+      }
+    }
+
+    /**
+     * CUSTOMER SHARES LIVE GPS LOCATION (Requested Feature)
+     */
+    async function handleShareCustomerLocation() {
+      const btn = document.getElementById('btn-share-location');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Reading Device GPS...';
+
+      // 1. Request real device GPS
+      const loc = await TrackingAPI.requestDeviceLocation();
+
+      // 2. Ask customer for landmark confirmation
+      const landmark = prompt('Add delivery landmark or note for rider (e.g. Near Village Water Tank / Blue Gate):', 'Opp. Gram Panchayat Office, Main Gate');
+
+      // 3. Share with TrackingAPI & broadcast to Rider & Store
+      const result = TrackingAPI.shareCustomerLocation(currentOrderId, {
+        lat: loc.lat,
+        lng: loc.lng,
+        accuracy: loc.accuracy,
+        landmark: landmark || '',
+        source: loc.source
+      });
+
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-circle-check text-success"></i> GPS Location Shared!';
+
+      Notifications.showToast(
+        'Live Location Shared!',
+        `GPS Pin (${loc.lat.toFixed(5)}° N, ${loc.lng.toFixed(5)}° E) successfully shared with delivery rider and store.`,
+        'success',
+        6000
+      );
+
+      // Refresh map and banner
+      const session = TrackingAPI.getSession(currentOrderId);
+      updateCustomerLocationBanner(session);
+      updateMapElements(session);
+      recenterCustomerMap();
+    }
+
+    let isContinuousStreaming = false;
+
+    /**
+     * CONTINUOUS REAL-TIME GPS STREAMING (watchPosition)
+     * Keeps streaming phone's GPS continuously as customer moves
+     */
+    function handleToggleContinuousSharing() {
+      const btn = document.getElementById('btn-continuous-gps');
+      if (!btn) return;
+
+      if (isContinuousStreaming) {
+        // Stop
+        TrackingAPI.stopContinuousCustomerSharing(currentOrderId);
+        isContinuousStreaming = false;
+        btn.innerHTML = '<i class="fa-solid fa-tower-broadcast"></i> Stream GPS Continuously (watchPosition)';
+        btn.style.background = 'transparent';
+        btn.style.color = '#065f46';
+        Notifications.showToast('GPS Streaming Paused', 'Continuous location broadcast has been stopped.', 'info');
+      } else {
+        // Start
+        const started = TrackingAPI.startContinuousCustomerSharing(currentOrderId, (custLoc) => {
+          const session = TrackingAPI.getSession(currentOrderId);
+          updateCustomerLocationBanner(session);
+          updateMapElements(session);
+        });
+
+        if (started) {
+          isContinuousStreaming = true;
+          btn.innerHTML = '<i class="fa-solid fa-circle-dot fa-fade text-danger"></i> 🔴 Streaming Live GPS (Active)';
+          btn.style.background = '#fef2f2';
+          btn.style.borderColor = '#ef4444';
+          btn.style.color = '#dc2626';
+
+          Notifications.showToast(
+            'Continuous Live GPS ON!',
+            'Your device is now continuously streaming live GPS coordinates to the delivery rider in real time!',
+            'success',
+            8000
+          );
+        }
+      }
+    }
+
+    /**
+     * SHARE TRACKING LINK WITH FAMILY / NEIGHBORS
+     */
+    async function handleShareTrackingLink() {
+      const res = await TrackingAPI.shareLiveDeliveryLink(currentOrderId);
+      if (res.method === 'CLIPBOARD') {
+        Notifications.showToast('Link Copied!', 'Live tracking link copied to clipboard. Share it with anyone!', 'success');
+      } else if (res.method === 'WEB_SHARE') {
+        Notifications.showToast('Shared!', 'Live delivery tracking link shared.', 'success');
+      } else {
+        // Fallback to WhatsApp
+        TrackingAPI.shareViaWhatsApp(currentOrderId);
+      }
+    }
+
+    function openCustomerGoogleMaps() {
+      const session = TrackingAPI.getSession(currentOrderId);
+      if (session) {
+        TrackingAPI.openGoogleMapsNavigation(session.customerLocation.lat, session.customerLocation.lng);
+      }
+    }
+
+    function openReportDamageModal() {
+      const order = Orders.getById(currentOrderId);
+      if (!order) return;
+
+      const reason = prompt('Please specify which item was damaged and why (e.g. Broken packet, leaked oil, crushed carton):', 'Item leaked / broken during transit');
+      if (!reason) return;
+
+      const res = Orders.reportDamagedItem(currentOrderId, {
+        damagedItemIds: order.items.map(i => i.id),
+        reason: reason
+      });
+
+      if (res.success) {
+        Notifications.showToast('Return Initiated', 'Damaged goods reported. Rider will return package to store. Refund in 1-2 days.', 'warning', 8000);
+        renderOrderTracking();
+      }
+    }
+
+    function cancelCurrentOrder() {
+      if (!confirm('Are you sure you want to cancel this order? A simulated refund will be processed.')) return;
+      const res = Orders.cancelOrder(currentOrderId, 'Customer requested cancellation via tracker');
+      if (res.success) {
+        Notifications.showToast('Order Cancelled', res.message, 'warning');
+        renderOrderTracking();
+      } else {
+        alert(res.message);
+      }
+    }
+  </script>
+</body>
+</html>

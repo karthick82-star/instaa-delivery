@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Store Order Management & Handover - FreshMart</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/store.css">
+</head>
+<body class="dashboard-layout">
+
+  <!-- Sidebar -->
+  <aside class="dashboard-sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon" style="background: linear-gradient(135deg, #d97706, #f59e0b);">
+        <i class="fa-solid fa-store"></i>
+      </div>
+      <div class="brand-text">
+        <h2>FreshMart</h2>
+        <span>Store Operations</span>
+      </div>
+    </div>
+
+    <div class="sidebar-role-badge">
+      <i class="fa-solid fa-shop"></i>
+      <span>Logged in as <strong>Store Manager</strong></span>
+    </div>
+
+    <ul class="sidebar-nav">
+      <div class="nav-section-title">Order Fulfilment</div>
+      <li><a href="store-dashboard.html"><i class="fa-solid fa-gauge-high"></i> Store Dashboard</a></li>
+      <li>
+        <a href="incoming-orders.html">
+          <i class="fa-solid fa-inbox"></i> Incoming Orders
+          <span class="nav-badge" id="incoming-count-badge" style="background-color: var(--danger);">0</span>
+        </a>
+      </li>
+      <li><a href="order-management.html" class="active"><i class="fa-solid fa-boxes-packing"></i> Order Management</a></li>
+      <li><a href="store-wallet.html"><i class="fa-solid fa-wallet"></i> Store Wallet & Ledger</a></li>
+    </ul>
+
+    <div class="sidebar-user">
+      <div class="user-profile-info">
+        <img src="https://images.unsplash.com/photo-1578916171728-46686eac8d58?w=150&auto=format&fit=crop&q=80" alt="Store Manager" class="user-profile-avatar">
+        <div class="user-profile-text">
+          <div class="user-name">FreshMart Store</div>
+          <div class="user-role">Central Metro Outlet</div>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="Auth.logoutUser()" title="Logout">
+        <i class="fa-solid fa-power-off"></i>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dashboard-main">
+    <header class="dashboard-header">
+      <div class="header-left">
+        <button class="mobile-toggle" id="mobile-sidebar-toggle">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="header-title-box">
+          <h1>Store Fulfilment & Handover Manager</h1>
+          <p>Order packing, rider broadcast dispatch, and Store OTP verification</p>
+        </div>
+      </div>
+
+      <div class="header-right" style="display: flex; align-items: center; gap: 1rem;">
+        <!-- Online/Offline Store Toggle (Feature 2) -->
+        <div class="flex items-center gap-2" style="background: var(--bg-alt); padding: 0.35rem 0.75rem; border-radius: var(--radius-full); border: 1px solid var(--border-light);">
+          <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted);">Shop Duty:</span>
+          <button class="btn btn-sm btn-success" id="btn-store-duty-toggle" onclick="toggleStoreOnlineStatus()">
+            <i class="fa-solid fa-circle"></i> Online
+          </button>
+        </div>
+
+        <span id="multi-device-badge" class="badge badge-success"><i class="fa-solid fa-satellite-dish"></i> Live Sync ON</span>
+        <button class="btn btn-outline btn-sm" onclick="TrackingAPI.showMultiDeviceConnectModal('ORD-1000')" title="Connect Mobile Phone via QR">
+          <i class="fa-solid fa-mobile-screen"></i> 📱 Mobile QR
+        </button>
+        <button class="btn btn-outline btn-sm" onclick="loadOrderManagement()">
+          <i class="fa-solid fa-rotate"></i> Refresh State
+        </button>
+      </div>
+    </header>
+
+    <div class="dashboard-content">
+
+      <!-- Status Filter Tabs -->
+      <div class="category-filter-bar" style="margin-bottom: 1.5rem;">
+        <button class="category-pill active" onclick="filterStoreOrders('ALL', this)">All Orders</button>
+        <button class="category-pill" onclick="filterStoreOrders('PREPARING', this)">In Packing</button>
+        <button class="category-pill" onclick="filterStoreOrders('READY_FOR_PICKUP', this)">Ready for Pickup</button>
+        <button class="category-pill" onclick="filterStoreOrders('RIDER_ASSIGNED', this)">Rider Assigned</button>
+        <button class="category-pill" onclick="filterStoreOrders('DISPATCHED', this)">Dispatched</button>
+        <button class="category-pill" onclick="filterStoreOrders('DELIVERED', this)">Delivered</button>
+      </div>
+
+      <!-- Orders List Container -->
+      <div id="store-management-orders-list">
+        <!-- Dynamically rendered -->
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Scripts -->
+  <script src="../js/storage.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/products.js"></script>
+  <script src="../js/cart.js"></script>
+  <script src="../js/orders.js"></script>
+  <script src="../js/dispatch.js"></script>
+  <script src="../js/otp.js"></script>
+  <script src="../js/wallet.js"></script>
+  <script src="../js/notifications.js"></script>
+  <script src="../js/tracking-api.js"></script>
+  <script src="../js/app.js"></script>
+
+  <script>
+    let currentFilter = 'ALL';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      Auth.checkAuth(['store', 'admin']);
+
+      // Check if specific orderId passed in query
+      const urlParams = new URLSearchParams(window.location.search);
+      const targetOrderId = urlParams.get('orderId');
+
+      loadOrderManagement(targetOrderId);
+      updateStoreDutyUI();
+    });
+
+    function updateStoreDutyUI() {
+      const users = Storage.get(STORAGE_KEYS.USERS, []);
+      const store = users.find(u => u.id === 'STR-001') || users.find(u => u.role === 'store');
+      const isOnline = store ? store.isOnline !== false : true;
+
+      const btn = document.getElementById('btn-store-duty-toggle');
+      if (btn) {
+        if (isOnline) {
+          btn.className = 'btn btn-sm btn-success';
+          btn.innerHTML = '<i class="fa-solid fa-circle"></i> Online';
+        } else {
+          btn.className = 'btn btn-sm btn-danger';
+          btn.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> Offline (Closed)';
+        }
+      }
+    }
+
+    function toggleStoreOnlineStatus() {
+      const users = Storage.get(STORAGE_KEYS.USERS, []);
+      const storeIndex = users.findIndex(u => u.id === 'STR-001');
+      if (storeIndex === -1) return;
+
+      const current = users[storeIndex].isOnline !== false;
+      users[storeIndex].isOnline = !current;
+      Storage.set(STORAGE_KEYS.USERS, users);
+
+      updateStoreDutyUI();
+
+      if (!users[storeIndex].isOnline) {
+        Notifications.showToast(
+          'Shop Toggled OFFLINE',
+          'Your shop is marked closed. Customers in Town A will be shown "The Neighbors" nearby town delivery popup.',
+          'warning',
+          7000
+        );
+      } else {
+        Notifications.showToast('Shop Toggled ONLINE', 'Your shop is open for local village orders.', 'success', 5000);
+      }
+    }
+
+    function filterStoreOrders(status, btn) {
+      currentFilter = status;
+      document.querySelectorAll('.category-pill').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      loadOrderManagement();
+    }
+
+    function loadOrderManagement(highlightOrderId = null) {
+      let orders = Orders.getStoreOrders();
+      const container = document.getElementById('store-management-orders-list');
+
+      // Update badge
+      const newOrders = orders.filter(o => o.status === ORDER_STATUS.NEW);
+      document.getElementById('incoming-count-badge').textContent = newOrders.length;
+
+      if (currentFilter !== 'ALL') {
+        if (currentFilter === 'PREPARING') {
+          orders = orders.filter(o => [ORDER_STATUS.ACCEPTED, ORDER_STATUS.PREPARING].includes(o.status));
+        } else {
+          orders = orders.filter(o => o.status === currentFilter);
+        }
+      }
+
+      if (orders.length === 0) {
+        container.innerHTML = `
+          <div class="card" style="text-align: center; padding: 4rem 1.5rem;">
+            <i class="fa-solid fa-boxes-packing" style="font-size: 3rem; color: #cbd5e1; margin-bottom: 1rem; display: block;"></i>
+            <h3>No orders found</h3>
+            <p style="color: var(--text-muted); margin: 0.5rem 0 1.5rem;">There are no store orders matching the '${currentFilter}' filter.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = orders.map(order => {
+        const isTarget = highlightOrderId && order.id === highlightOrderId;
+        return renderOrderManagementCard(order, isTarget);
+      }).join('');
+    }
+
+    function renderOrderManagementCard(order, isTarget) {
+      // Determine action buttons and handover OTP widget
+      let actionArea = '';
+      let otpArea = '';
+
+      if (order.status === ORDER_STATUS.NEW) {
+        actionArea = `
+          <div class="flex justify-between items-center" style="padding-top: 1rem; border-top: 1px solid var(--border-light);">
+            <span class="text-danger"><strong>New Order:</strong> Requires store confirmation</span>
+            <a href="incoming-orders.html" class="btn btn-warning btn-sm">
+              <i class="fa-solid fa-bell"></i> Review in Incoming Queue &rarr;
+            </a>
+          </div>
+        `;
+      } else if (order.status === ORDER_STATUS.ACCEPTED || order.status === ORDER_STATUS.PREPARING) {
+        actionArea = `
+          <div class="flex justify-between items-center flex-wrap gap-2" style="padding-top: 1rem; border-top: 1px solid var(--border-light);">
+            <div>
+              <span class="text-warning"><strong>Kitchen/Packing Stage:</strong> Verify all items before marking ready</span>
+            </div>
+            <button class="btn btn-primary btn-lg" onclick="markOrderReadyForPickup('${order.id}')">
+              <i class="fa-solid fa-box-check"></i> Pack & Mark Ready for Pickup &rarr;
+            </button>
+          </div>
+        `;
+      } else if (order.status === ORDER_STATUS.READY_FOR_PICKUP) {
+        otpArea = `
+          <div class="store-handover-otp-box">
+            <div class="handover-otp-title"><i class="fa-solid fa-key"></i> Store Handover OTP (For Rider)</div>
+            <div class="handover-otp-code">${order.storeOtp || '------'}</div>
+            <div class="handover-otp-notice">
+              <i class="fa-solid fa-circle-info"></i> Broadcasted to online riders. Provide this 6-digit code to the rider at your pickup counter.
+            </div>
+          </div>
+        `;
+        actionArea = `
+          <div class="flex justify-between items-center" style="padding-top: 1rem; border-top: 1px solid var(--border-light);">
+            <div class="flex items-center gap-2">
+              <span class="pulse-indicator"></span>
+              <strong>Broadcast Active:</strong> Waiting for a nearby rider to double-confirm and accept...
+            </div>
+            <span class="badge badge-purple"><i class="fa-solid fa-satellite-dish"></i> Radar Broadcast Dispatched</span>
+          </div>
+        `;
+      } else if (order.status === ORDER_STATUS.RIDER_ASSIGNED) {
+        otpArea = `
+          <div class="store-handover-otp-box">
+            <div class="handover-otp-title"><i class="fa-solid fa-key"></i> Store Handover OTP (For Rider)</div>
+            <div class="handover-otp-code">${order.storeOtp || '------'}</div>
+            <div class="handover-otp-notice">
+              <i class="fa-solid fa-circle-info"></i> Share this code with Rider <strong>${order.assignedRiderName}</strong> when they arrive. Once rider enters OTP, store wallet will be credited!
+            </div>
+          </div>
+        `;
+        actionArea = `
+          <div class="flex justify-between items-center flex-wrap gap-2" style="padding-top: 1rem; border-top: 1px solid var(--border-light);">
+            <div class="flex items-center gap-3">
+              <div style="width: 44px; height: 44px; border-radius: 50%; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+                <i class="fa-solid fa-motorcycle"></i>
+              </div>
+              <div>
+                <strong>Assigned to Rider ${order.assignedRiderName}</strong> (${order.assignedRiderVehicle || 'Electric Bike'})
+                <div style="font-size: 0.8rem; color: var(--text-muted);"><i class="fa-solid fa-phone"></i> Contact: ${order.assignedRiderPhone || 'Direct'}</div>
+              </div>
+            </div>
+            <span class="badge badge-indigo">Rider Arriving at Store</span>
+          </div>
+        `;
+      } else if (order.status === ORDER_STATUS.DISPATCHED) {
+        actionArea = `
+          <div class="flex justify-between items-center flex-wrap gap-2" style="padding-top: 1rem; border-top: 1px solid var(--border-light);">
+            <div class="flex items-center gap-2 text-success">
+              <i class="fa-solid fa-circle-check" style="font-size: 1.25rem;"></i>
+              <div>
+                <strong>Store Handover Verified!</strong>
+                <p style="font-size: 0.8rem; color: var(--text-muted);">Store wallet credited +₹${order.storeEarnings.toFixed(2)}. Rider is delivering to customer.</p>
+              </div>
+            </div>
+            <span class="badge badge-blue"><i class="fa-solid fa-truck-fast"></i> Out for Delivery</span>
+          </div>
+        `;
+      } else if (order.status === ORDER_STATUS.DELIVERED) {
+        actionArea = `
+          <div class="flex justify-between items-center" style="padding-top: 1rem; border-top: 1px solid var(--border-light);">
+            <div class="text-success flex items-center gap-2">
+              <i class="fa-solid fa-champagne-glasses"></i>
+              <span>Order Delivered & Completed (Case i)</span>
+            </div>
+            <span class="badge badge-success"><i class="fa-solid fa-circle-check"></i> DELIVERED</span>
+          </div>
+        `;
+      } else if (order.status === 'RETURN_IN_PROGRESS') {
+        otpArea = `
+          <div class="store-handover-otp-box" style="border-color: var(--danger); background: #fef2f2;">
+            <div class="handover-otp-title" style="color: var(--danger);"><i class="fa-solid fa-rotate-left"></i> Case ii: Shop Return OTP for Rider</div>
+            <div class="handover-otp-code" style="color: var(--danger-dark);">${order.shopReturnOtp || '------'}</div>
+            <div class="handover-otp-notice" style="color: #991b1b;">
+              <i class="fa-solid fa-triangle-exclamation"></i> Customer reported damaged item (${order.damageReason || 'Inspection failed'}). Rider ${order.assignedRiderName} is returning goods. Inspect returned item and provide this code to rider. ₹${order.refundAmount.toFixed(2)} will be deducted from your security deposit.
+            </div>
+          </div>
+        `;
+        actionArea = `
+          <div class="flex justify-between items-center" style="padding-top: 1rem; border-top: 1px solid var(--border-light);">
+            <div class="text-warning flex items-center gap-2">
+              <i class="fa-solid fa-truck-ramp-box"></i>
+              <span>Damaged items being returned to store counter</span>
+            </div>
+            <span class="badge badge-danger">Return Pending</span>
+          </div>
+        `;
+      } else if (order.status === 'RETURNED_TO_STORE') {
+        actionArea = `
+          <div class="flex justify-between items-center" style="padding-top: 1rem; border-top: 1px solid var(--border-light);">
+            <div class="text-danger flex items-center gap-2">
+              <i class="fa-solid fa-hand-holding-dollar"></i>
+              <span>Damaged Goods Returned: -₹${order.refundAmount.toFixed(2)} deducted from store initial deposit</span>
+            </div>
+            <span class="badge badge-secondary">RETURN RESOLVED</span>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="card" id="card-${order.id}" style="${isTarget ? 'border: 2px solid var(--primary); box-shadow: var(--shadow-lg);' : ''}; margin-bottom: 1.75rem;">
+          <div class="card-header">
+            <div>
+              <span style="font-size: 1.2rem; font-weight: 800; font-family: var(--font-heading);">Order #${order.id}</span>
+              <span style="font-size: 0.8rem; color: var(--text-muted); margin-left: 0.75rem;">
+                <i class="fa-solid fa-clock"></i> Placed ${App.formatDateTime(order.createdAt)}
+              </span>
+            </div>
+            <div class="flex items-center gap-2">
+              ${App.getStatusBadge(order.status)}
+              <strong style="font-size: 1.15rem; font-family: var(--font-heading);">Store Net: ${App.formatCurrency(order.storeEarnings)}</strong>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <!-- Customer & Delivery Meta (Real-Time Tracking & Location Sharing) -->
+            <div class="flex justify-between items-start flex-wrap gap-2" style="background-color: var(--bg-alt); padding: 0.85rem 1rem; border-radius: var(--radius-md); margin-bottom: 1rem; font-size: 0.85rem;">
+              <div>
+                <strong>Customer:</strong> ${order.customerName}<br>
+                ${[ORDER_STATUS.READY_FOR_PICKUP, ORDER_STATUS.RIDER_ASSIGNED, ORDER_STATUS.DISPATCHED, ORDER_STATUS.DELIVERED, 'RETURN_IN_PROGRESS', 'RETURNED_TO_STORE'].includes(order.status)
+                  ? `<span class="text-success"><i class="fa-solid fa-location-dot"></i> <strong>Destination:</strong> ${order.deliveryAddress || 'Town Customer'} ${order.customerLandmark ? '• Landmark: ' + order.customerLandmark : ''}</span>
+                     ${order.customerLat ? `<br><span style="font-size: 0.78rem; color: var(--text-muted);"><i class="fa-solid fa-satellite-dish text-primary"></i> <strong>Customer GPS:</strong> <code>${order.customerLat.toFixed(5)}° N, ${order.customerLng.toFixed(5)}° E</code> ${order.customerLocationShared ? '<span class=\"badge badge-success\" style=\"font-size: 0.65rem;\">Live Shared</span>' : ''}</span>` : ''}
+                     <div style="margin-top: 0.4rem;">
+                       <button class="btn btn-outline btn-sm" style="font-size: 0.75rem; padding: 0.2rem 0.55rem;" onclick="TrackingAPI.openGoogleMapsNavigation(${order.customerLat || 13.208}, ${order.customerLng || 77.719}, '${order.customerName}')">
+                         <i class="fa-brands fa-google text-primary"></i> View Customer Location in Google Maps
+                       </button>
+                     </div>`
+                  : `<span class="text-muted"><i class="fa-solid fa-shield-halved text-primary"></i> <strong>Location Protected:</strong> Street address hidden during initial preparation. Dispatched directly to Rider upon packing.</span>`
+                }
+              </div>
+              <div style="text-align: right;">
+                <span>Total Items: <strong>${order.items.length} units</strong></span><br>
+                <span>Distance: <strong>${order.distanceKm} KM</strong></span>
+              </div>
+            </div>
+
+            <!-- Items Checkable List -->
+            <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem;">Packed Items:</h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.5rem; margin-bottom: 1rem;">
+              ${order.items.map(item => `
+                <div style="background: #fff; border: 1px solid var(--border-light); padding: 0.5rem 0.75rem; border-radius: var(--radius-sm); font-size: 0.85rem; display: flex; justify-content: space-between;">
+                  <span>${item.name}</span>
+                  <strong>x${item.qty}</strong>
+                </div>
+              `).join('')}
+            </div>
+
+            <!-- Handover OTP Box if applicable -->
+            ${otpArea}
+
+            <!-- Action Row -->
+            ${actionArea}
+          </div>
+        </div>
+      `;
+    }
+
+    function markOrderReadyForPickup(orderId) {
+      // 1. Generate 6-digit Store OTP
+      const storeOtp = OTP.generateStoreOTP(orderId);
+
+      // 2. Update status to READY_FOR_PICKUP
+      Orders.updateOrderStatus(orderId, ORDER_STATUS.READY_FOR_PICKUP, {
+        storeOtp: storeOtp,
+        note: `Order packed by store. Store Handover OTP (${storeOtp}) generated.`
+      });
+
+      // 3. Broadcast to all online riders
+      const broadcastRes = Dispatch.broadcastOrderToRiders(orderId);
+
+      Notifications.showToast(
+        'Ready for Pickup!',
+        `Order #${orderId} broadcasted to ${broadcastRes.count} online rider(s). Store OTP: ${storeOtp}`,
+        'success',
+        6000
+      );
+
+      loadOrderManagement();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,166 @@
+/* ==========================================================================
+   SMART STORE DELIVERY - STORE WEB PORTAL STYLESHEET
+   Order Pipeline, Incoming Queue, Store Handover OTP Card, Wallet & Item Checklists
+   ========================================================================== */
+
+/* Store Live Pipeline Columns */
+.order-pipeline-board {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+}
+
+.pipeline-col {
+  background-color: var(--bg-alt);
+  border-radius: var(--radius-xl);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.pipeline-col-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid var(--border-light);
+}
+
+.pipeline-col-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pipeline-count {
+  background-color: #fff;
+  border: 1px solid var(--border-light);
+  padding: 0.15rem 0.6rem;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+/* Store Order Card */
+.store-order-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  transition: all var(--transition-fast);
+}
+
+.store-order-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.store-order-card.new-order {
+  border-left: 4px solid var(--primary);
+  animation: pulse 2s infinite;
+}
+
+.store-order-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.store-order-id {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 1.05rem;
+}
+
+.store-order-customer {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.store-items-list {
+  background-color: var(--bg-alt);
+  border-radius: var(--radius-md);
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.store-item-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+}
+
+.store-item-name {
+  font-weight: 500;
+}
+
+.store-item-qty {
+  color: var(--text-muted);
+}
+
+/* Store Handover OTP Card inside Order Details */
+.store-handover-otp-box {
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  border: 2px dashed #f59e0b;
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  text-align: center;
+  margin: 1rem 0;
+}
+
+.handover-otp-title {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 800;
+  color: #92400e;
+  margin-bottom: 0.25rem;
+}
+
+.handover-otp-code {
+  font-family: 'Outfit', monospace;
+  font-size: 2.5rem;
+  font-weight: 800;
+  letter-spacing: 0.35em;
+  color: #b45309;
+  margin: 0.35rem 0;
+}
+
+.handover-otp-notice {
+  font-size: 0.775rem;
+  color: #92400e;
+}
+
+/* Store Action Button Row */
+.store-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: auto;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border-light);
+}
+
+.store-actions-row .btn {
+  flex: 1;
+}
+
+/* Reject Modal Styling */
+.reject-modal-box textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  margin-top: 0.5rem;
+  resize: vertical;
+}

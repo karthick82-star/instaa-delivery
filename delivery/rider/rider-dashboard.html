@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rider Dashboard - Smart Store Delivery</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/rider.css">
+</head>
+<body class="dashboard-layout">
+
+  <!-- Sidebar -->
+  <aside class="dashboard-sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon" style="background: linear-gradient(135deg, #10b981, #059669);">
+        <i class="fa-solid fa-motorcycle"></i>
+      </div>
+      <div class="brand-text">
+        <h2>instaa</h2>
+        <span>Rider Partner App</span>
+      </div>
+    </div>
+
+    <div class="sidebar-role-badge">
+      <i class="fa-solid fa-helmet-safety"></i>
+      <span>Logged in as <strong>Rider</strong></span>
+    </div>
+
+    <ul class="sidebar-nav">
+      <div class="nav-section-title">Operations</div>
+      <li><a href="rider-dashboard.html" class="active"><i class="fa-solid fa-gauge-high"></i> Dashboard</a></li>
+      <li>
+        <a href="available-orders.html">
+          <i class="fa-solid fa-satellite-dish"></i> Available Requests
+          <span class="nav-badge" id="available-count-badge">0</span>
+        </a>
+      </li>
+      <li><a href="active-delivery.html"><i class="fa-solid fa-map-location-dot"></i> Active Delivery</a></li>
+      <li><a href="rider-wallet.html"><i class="fa-solid fa-wallet"></i> My Earnings & Wallet</a></li>
+      <li><a href="rider-history.html"><i class="fa-solid fa-clock-rotate-left"></i> Delivery History</a></li>
+    </ul>
+
+    <div class="sidebar-user">
+      <div class="user-profile-info">
+        <img src="" alt="Rider" class="user-profile-avatar user-avatar" onerror="this.src='https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80'">
+        <div class="user-profile-text">
+          <div class="user-name">Loading...</div>
+          <div class="user-role">Rider Partner</div>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="Auth.logoutUser()" title="Logout">
+        <i class="fa-solid fa-power-off"></i>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dashboard-main">
+    <header class="dashboard-header">
+      <div class="header-left">
+        <button class="mobile-toggle" id="mobile-sidebar-toggle">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="header-title-box">
+          <h1>Rider Dispatch Portal</h1>
+          <p>Real-time delivery requests and order handover verification</p>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <a href="available-orders.html" class="btn btn-primary btn-sm">
+          <i class="fa-solid fa-radar"></i> Live Radar
+        </a>
+        <button class="header-btn" id="btn-notifications" title="Notifications">
+          <i class="fa-regular fa-bell"></i>
+          <span class="header-badge notif-badge">0</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="dashboard-content">
+      
+      <!-- Online / Offline Toggle Bar -->
+      <div class="rider-status-bar">
+        <div class="status-toggle-wrapper">
+          <label class="toggle-switch">
+            <input type="checkbox" id="rider-online-checkbox" onchange="toggleRiderOnlineStatus(this.checked)">
+            <span class="toggle-slider"></span>
+          </label>
+          <div>
+            <div class="rider-status-text" id="status-display-text">ONLINE</div>
+            <p style="font-size: 0.8rem; color: var(--text-muted);" id="status-hint-text">You are eligible to receive instant broadcast delivery orders</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <div style="text-align: right;">
+            <div style="font-size: 0.8rem; color: var(--text-muted);">Vehicle Assigned</div>
+            <strong id="rider-vehicle-text">Hero Electric Optima</strong>
+          </div>
+          <div style="width: 44px; height: 44px; border-radius: var(--radius-md); background: var(--bg-alt); display: flex; align-items: center; justify-content: center; font-size: 1.25rem; color: var(--primary);">
+            <i class="fa-solid fa-motorcycle"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- Active Delivery Banner if Rider is engaged -->
+      <div id="rider-active-delivery-alert" style="display: none; margin-bottom: 2rem;"></div>
+
+      <!-- 5 Metric Cards -->
+      <div class="metrics-grid">
+        <!-- Today's Earnings -->
+        <div class="stat-card">
+          <div class="stat-content">
+            <span class="stat-label">Today's Earnings</span>
+            <div class="stat-value" id="stat-today-earnings">₹0.00</div>
+            <div class="stat-hint"><i class="fa-solid fa-arrow-trend-up text-success"></i> Credited per completed trip</div>
+          </div>
+          <div class="stat-icon stat-icon-green">
+            <i class="fa-solid fa-money-bill-wave"></i>
+          </div>
+        </div>
+
+        <!-- Wallet Balance -->
+        <div class="stat-card">
+          <div class="stat-content">
+            <span class="stat-label">Available Balance</span>
+            <div class="stat-value" id="stat-wallet-balance">₹0.00</div>
+            <div class="stat-hint"><a href="rider-wallet.html" style="font-weight: 600;">Withdraw Funds &rarr;</a></div>
+          </div>
+          <div class="stat-icon stat-icon-blue">
+            <i class="fa-solid fa-wallet"></i>
+          </div>
+        </div>
+
+        <!-- Available Requests -->
+        <div class="stat-card">
+          <div class="stat-content">
+            <span class="stat-label">Available Requests</span>
+            <div class="stat-value" id="stat-available-requests">0</div>
+            <div class="stat-hint"><a href="available-orders.html" style="font-weight: 600;">View Radar &rarr;</a></div>
+          </div>
+          <div class="stat-icon stat-icon-amber">
+            <i class="fa-solid fa-satellite-dish"></i>
+          </div>
+        </div>
+
+        <!-- Total Deliveries Completed -->
+        <div class="stat-card">
+          <div class="stat-content">
+            <span class="stat-label">Total Deliveries</span>
+            <div class="stat-value" id="stat-total-deliveries">0</div>
+            <div class="stat-hint"><i class="fa-solid fa-circle-check text-success"></i> Lifetime completed</div>
+          </div>
+          <div class="stat-icon stat-icon-purple">
+            <i class="fa-solid fa-box-check"></i>
+          </div>
+        </div>
+
+        <!-- Rider Rating -->
+        <div class="stat-card">
+          <div class="stat-content">
+            <span class="stat-label">Customer Rating</span>
+            <div class="stat-value" id="stat-rider-rating">5.0 ⭐</div>
+            <div class="stat-hint"><i class="fa-solid fa-award text-warning"></i> Top Rated Partner</div>
+          </div>
+          <div class="stat-icon stat-icon-indigo">
+            <i class="fa-solid fa-star"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Actions & Incoming Orders Preview -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i class="fa-solid fa-bell text-warning"></i> Ready for Pickup Broadcasts
+          </h3>
+          <a href="available-orders.html" class="btn btn-outline btn-sm">Open Full Radar Screen</a>
+        </div>
+        <div class="card-body" id="dashboard-requests-preview">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Scripts -->
+  <script src="../js/storage.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/products.js"></script>
+  <script src="../js/cart.js"></script>
+  <script src="../js/orders.js"></script>
+  <script src="../js/dispatch.js"></script>
+  <script src="../js/otp.js"></script>
+  <script src="../js/wallet.js"></script>
+  <script src="../js/notifications.js"></script>
+  <script src="../js/app.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const user = Auth.checkAuth(['rider']);
+      if (!user) return;
+
+      loadRiderDashboard();
+    });
+
+    function loadRiderDashboard() {
+      const user = Auth.getCurrentUser();
+      
+      // Update toggle state
+      const checkbox = document.getElementById('rider-online-checkbox');
+      const isOnline = user.status === 'ONLINE';
+      checkbox.checked = isOnline;
+      updateStatusDisplay(isOnline);
+
+      document.getElementById('rider-vehicle-text').textContent = user.vehicle || 'Standard Two-Wheeler';
+
+      // Load Wallet
+      const wallet = Wallet.getRiderWallet(user.id);
+      document.getElementById('stat-today-earnings').textContent = App.formatCurrency(wallet.todayEarnings || 0);
+      document.getElementById('stat-wallet-balance').textContent = App.formatCurrency(wallet.availableBalance || 0);
+      document.getElementById('stat-rider-rating').textContent = `${(user.rating || 5.0).toFixed(1)} ⭐`;
+
+      // Load Deliveries
+      const riderOrders = Orders.getByRider(user.id);
+      const completedCount = riderOrders.filter(o => o.status === ORDER_STATUS.DELIVERED).length;
+      document.getElementById('stat-total-deliveries').textContent = user.totalTrips || completedCount;
+
+      // Available Orders for Dispatch
+      const available = Dispatch.getAvailableOrdersForRiders();
+      document.getElementById('stat-available-requests').textContent = available.length;
+      document.getElementById('available-count-badge').textContent = available.length;
+
+      // Check Active Delivery
+      const activeDelivery = Dispatch.getActiveDeliveryForRider(user.id);
+      const activeBanner = document.getElementById('rider-active-delivery-alert');
+
+      if (activeDelivery) {
+        activeBanner.style.display = 'block';
+        activeBanner.innerHTML = `
+          <div class="card" style="border: 2px solid var(--primary); background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);">
+            <div class="card-body flex justify-between items-center flex-wrap gap-2">
+              <div class="flex items-center gap-3">
+                <div style="width: 52px; height: 52px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+                  <i class="fa-solid fa-route"></i>
+                </div>
+                <div>
+                  <h3 style="margin: 0;">Active Delivery #${activeDelivery.id}</h3>
+                  <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;">
+                    Stage: <strong>${activeDelivery.status === 'RIDER_ASSIGNED' ? 'Proceed to Store for Pickup (Enter Store OTP)' : 'Deliver to Customer (Enter Customer OTP)'}</strong>
+                  </p>
+                </div>
+              </div>
+              <a href="active-delivery.html" class="btn btn-primary btn-lg">
+                <i class="fa-solid fa-navigation"></i> Open Navigation & Enter OTP &rarr;
+              </a>
+            </div>
+          </div>
+        `;
+      } else {
+        activeBanner.style.display = 'none';
+      }
+
+      // Preview Requests
+      const previewContainer = document.getElementById('dashboard-requests-preview');
+      if (available.length === 0) {
+        previewContainer.innerHTML = `
+          <div style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
+            <i class="fa-solid fa-satellite-dish" style="font-size: 2.5rem; color: #cbd5e1; margin-bottom: 0.75rem; display: block;"></i>
+            <p><strong>Radar scanning for ready orders...</strong></p>
+            <span style="font-size: 0.85rem;">When FreshMart marks an order READY_FOR_PICKUP, it will appear here instantly.</span>
+          </div>
+        `;
+      } else {
+        previewContainer.innerHTML = available.slice(0, 2).map(order => `
+          <div class="delivery-request-card" style="margin-bottom: 1rem;">
+            <div class="request-header">
+              <span class="request-id-badge">Order #${order.id}</span>
+              <span class="request-payout-badge">Earn ₹${order.riderEarnings.toFixed(2)}</span>
+            </div>
+            <div class="request-route-flow">
+              <div class="route-stop">
+                <div class="stop-marker pickup"><i class="fa-solid fa-store"></i></div>
+                <div class="stop-details">
+                  <h5>${order.storeName}</h5>
+                  <p>${order.storeAddress}</p>
+                </div>
+              </div>
+              <div class="route-stop">
+                <div class="stop-marker drop"><i class="fa-solid fa-location-dot"></i></div>
+                <div class="stop-details">
+                  <h5>${order.customerName}</h5>
+                  <p>${order.deliveryAddress}</p>
+                </div>
+              </div>
+            </div>
+            <div class="flex justify-between items-center">
+              <span style="font-size: 0.85rem; color: var(--text-muted);"><i class="fa-solid fa-route"></i> ${order.distanceKm} KM (~${order.estimatedMinutes} mins)</span>
+              <button class="btn btn-success" onclick="Dispatch.openAcceptanceModal('${order.id}', '${user.id}', () => location.href='active-delivery.html')">
+                <i class="fa-solid fa-check"></i> Accept Delivery
+              </button>
+            </div>
+          </div>
+        `).join('');
+      }
+    }
+
+    function toggleRiderOnlineStatus(isOnline) {
+      const user = Auth.getCurrentUser();
+      const users = Storage.get(STORAGE_KEYS.USERS, []);
+      const index = users.findIndex(u => u.id === user.id);
+
+      if (index > -1) {
+        users[index].status = isOnline ? 'ONLINE' : 'OFFLINE';
+        Storage.set(STORAGE_KEYS.USERS, users);
+        user.status = users[index].status;
+        Auth.setCurrentUser(user);
+        updateStatusDisplay(isOnline);
+
+        Notifications.showToast(
+          isOnline ? 'You are Online' : 'You are Offline',
+          isOnline ? 'You will now receive delivery broadcast requests.' : 'Broadcasting paused. You will not receive new requests.',
+          isOnline ? 'success' : 'info'
+        );
+      }
+    }
+
+    function updateStatusDisplay(isOnline) {
+      const text = document.getElementById('status-display-text');
+      const hint = document.getElementById('status-hint-text');
+      if (isOnline) {
+        text.textContent = 'ONLINE - ACCEPTING JOBS';
+        text.className = 'rider-status-text online';
+        hint.textContent = 'You are visible to FreshMart and eligible to claim broadcast deliveries';
+      } else {
+        text.textContent = 'OFFLINE - DUTY PAUSED';
+        text.className = 'rider-status-text offline';
+        hint.textContent = 'Toggle switch ON to start receiving delivery requests';
+      }
+    }
+  </script>
+</body>
+</html>

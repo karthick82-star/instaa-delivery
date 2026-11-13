@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>instaa - Rural Hyperlocal Q-Commerce Ecosystem (Groceries Made Easier)</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .landing-nav {
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      padding: 1rem 0;
+    }
+    .landing-nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .landing-hero {
+      background: radial-gradient(circle at 80% 20%, #064e3b 0%, #0f172a 70%);
+      color: #fff;
+      padding: 5rem 0 4rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(16, 185, 129, 0.2);
+      border: 1px solid rgba(16, 185, 129, 0.5);
+      color: #34d399;
+      padding: 0.35rem 0.95rem;
+      border-radius: var(--radius-full);
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+    }
+    .hero-title {
+      font-size: 3.25rem;
+      font-weight: 800;
+      line-height: 1.15;
+      margin-bottom: 1.25rem;
+      color: #fff;
+    }
+    .hero-title span {
+      background: linear-gradient(135deg, #34d399 0%, #60a5fa 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero-desc {
+      font-size: 1.2rem;
+      color: #cbd5e1;
+      max-width: 720px;
+      margin-bottom: 2rem;
+      line-height: 1.6;
+    }
+    .hero-actions {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.75rem;
+      margin-top: 2rem;
+    }
+    .feature-spec-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-xl);
+      padding: 1.75rem;
+      transition: all var(--transition-normal);
+      display: flex;
+      flex-direction: column;
+    }
+    .feature-spec-card:hover {
+      transform: translateY(-5px);
+      box-shadow: var(--shadow-lg);
+      border-color: var(--primary);
+    }
+    .feature-num-badge {
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+    }
+    .roles-section {
+      padding: 5rem 0;
+      background-color: var(--bg-main);
+    }
+    .section-header {
+      text-align: center;
+      max-width: 720px;
+      margin: 0 auto 3.5rem;
+    }
+    .section-header h2 {
+      font-size: 2.25rem;
+      margin-bottom: 0.75rem;
+    }
+    .section-header p {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+    }
+    .roles-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.75rem;
+    }
+    .role-card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-xl);
+      padding: 2rem;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      transition: all var(--transition-normal);
+    }
+    .role-card:hover {
+      transform: translateY(-6px);
+      box-shadow: var(--shadow-xl);
+      border-color: var(--primary);
+    }
+    .role-card-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: var(--radius-lg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.75rem;
+      margin-bottom: 1.25rem;
+    }
+    .role-cust .role-card-icon { background: #eff6ff; color: #2563eb; }
+    .role-store .role-card-icon { background: #fffbeb; color: #d97706; }
+    .role-rider .role-card-icon { background: #ecfdf5; color: #059669; }
+    .role-admin .role-card-icon { background: #f5f3ff; color: #7c3aed; }
+    .role-card h3 {
+      font-size: 1.35rem;
+      margin-bottom: 0.5rem;
+    }
+    .role-card p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      line-height: 1.5;
+      margin-bottom: 1.5rem;
+      flex: 1;
+    }
+    .role-credentials-box {
+      background-color: var(--bg-alt);
+      border-radius: var(--radius-md);
+      padding: 0.75rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 1.25rem;
+      font-family: monospace;
+    }
+    .lifecycle-section {
+      background-color: #fff;
+      padding: 5rem 0;
+      border-top: 1px solid var(--border-light);
+      border-bottom: 1px solid var(--border-light);
+    }
+    footer {
+      background-color: var(--secondary);
+      color: #94a3b8;
+      padding: 3rem 0 5rem;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <header class="landing-nav">
+    <div class="container landing-nav-inner">
+      <div class="flex items-center gap-2">
+        <div class="brand-icon" style="background: linear-gradient(135deg, #10b981, #059669);">
+          <i class="fa-solid fa-bicycle"></i>
+        </div>
+        <div class="brand-text">
+          <h2 style="color: #fff; margin: 0; font-size: 1.4rem;">instaa</h2>
+          <span style="color: #34d399; font-size: 0.7rem; letter-spacing: 0.5px;">GROCERIES MADE EASIER</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <a href="admin/server-health.html" class="btn btn-outline btn-sm" style="color: #38bdf8; border-color: rgba(56,189,248,0.4);">
+          <i class="fa-solid fa-server"></i> King & Queen HA
+        </a>
+        <a href="login.html" class="btn btn-outline btn-sm" style="color: #fff; border-color: rgba(255,255,255,0.2);">
+          <i class="fa-solid fa-right-to-bracket"></i> Login
+        </a>
+        <a href="customer/products.html" class="btn btn-primary btn-sm">
+          <i class="fa-solid fa-store"></i> Browse Catalog
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="landing-hero">
+    <div class="container">
+      <div class="hero-badge">
+        <i class="fa-solid fa-leaf"></i> Rural Hyperlocal Q-Commerce Ecosystem
+      </div>
+      <h1 class="hero-title">
+        instaa &bull; <span>Groceries Made Easier</span>
+      </h1>
+      <p class="hero-desc">
+        A multi-town, multi-vendor e-grocery delivery platform optimized for low-density semi-urban and rural towns. Built with high-availability failover, neighboring village fallbacks, 2-minute idle rider reassignment, varying commission slabs, Google Pay app-to-app handshakes, and built-in Google Maps navigation.
+      </p>
+      <div class="hero-actions">
+        <a href="customer/products.html" class="btn btn-primary btn-lg" style="background: #10b981; border: none;">
+          <i class="fa-solid fa-cart-shopping"></i> Shop Groceries Now
+        </a>
+        <a href="admin/server-health.html" class="btn btn-outline btn-lg" style="color: #fff; border-color: rgba(255,255,255,0.3);">
+          <i class="fa-solid fa-server text-warning"></i> King & Queen HA Monitor
+        </a>
+        <button class="btn btn-outline btn-lg" onclick="App.autoSimulateOrder()" style="color: #cbd5e1; border-color: rgba(255,255,255,0.2);">
+          <i class="fa-solid fa-wand-magic-sparkles text-warning"></i> Simulate Test Order
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- THE 6 CORE FEATURES SPECIFICATION FROM REQUIREMENTS -->
+  <section style="padding: 4.5rem 0; background: #fff;">
+    <div class="container">
+      <div class="section-header">
+        <span style="color: var(--primary); font-weight: 700; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.5px;">Requirements Specification</span>
+        <h2>Instaa Core Engineering Features</h2>
+        <p>Implementation of the complete rural hyperlocal Q-commerce ecosystem architecture.</p>
+      </div>
+
+      <div class="features-grid">
+        <!-- 1. The King & Queen -->
+        <div class="feature-spec-card">
+          <div class="feature-num-badge">Feature 1</div>
+          <h3 style="font-size: 1.25rem; margin-bottom: 0.5rem;">1. The King & Queen HA</h3>
+          <p style="font-size: 0.9rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 1rem;">
+            Secondary standby server (QUEEN - GCP Bangalore) automatically detects primary server (KING - AWS Mumbai) outages with zero manual intervention. Continuous 3s heartbeat ping, zero shared infrastructure, and instant SMS alerts to admin.
+          </p>
+          <a href="admin/server-health.html" class="btn btn-outline btn-sm" style="margin-top: auto;">
+            Open HA Server Monitor &rarr;
+          </a>
+        </div>
+
+        <!-- 2. The Neighbors -->
+        <div class="feature-spec-card">
+          <div class="feature-num-badge">Feature 2</div>
+          <h3 style="font-size: 1.25rem; margin-bottom: 0.5rem;">2. The Neighbors</h3>
+          <p style="font-size: 0.9rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 1rem;">
+            Shops have online/offline toggling. If all shops of Town A are offline, customer gets a popup to order from Town B with an inter-town delivery fee (₹70, 45-60 mins). Respective town riders get priority assignment.
+          </p>
+          <a href="customer/products.html" class="btn btn-outline btn-sm" style="margin-top: auto;">
+            Test Neighbor Town Flow &rarr;
+          </a>
+        </div>
+
+        <!-- 3. Time Out -->
+        <div class="feature-spec-card">
+          <div class="feature-num-badge">Feature 3</div>
+          <h3 style="font-size: 1.25rem; margin-bottom: 0.5rem;">3. Time Out (2-Min Idle)</h3>
+          <p style="font-size: 0.9rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 1rem;">
+            After an order is assigned, the backend monitors rider geolocation. Because there are no traffic lights in rural towns, an idle rider (> 2 mins) has their order automatically reassigned to another rider with instant alert modal.
+          </p>
+          <a href="rider/active-delivery.html" class="btn btn-outline btn-sm" style="margin-top: auto;">
+            Test Idle Reassignment &rarr;
+          </a>
+        </div>
+
+        <!-- 4. Varying Commission Slabs -->
+        <div class="feature-spec-card">
+          <div class="feature-num-badge">Feature 4</div>
+          <h3 style="font-size: 1.25rem; margin-bottom: 0.5rem;">4. Varying Commission Slabs</h3>
+          <p style="font-size: 0.9rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 1rem;">
+            Commissions vary per category: Kitchen Staples (3-4%), Dairy & Daily Essentials (3-5%), Packaged FMCG & Snacks (6-8%), Personal Care & Household (8-10%). Virtual ledgers deduct itemized rates. Admin can edit rates anytime.
+          </p>
+          <a href="admin/store-management.html" class="btn btn-outline btn-sm" style="margin-top: auto;">
+            View Commission Slabs &rarr;
+          </a>
+        </div>
+
+        <!-- 5. App to App Handshake -->
+        <div class="feature-spec-card">
+          <div class="feature-num-badge">Feature 5</div>
+          <h3 style="font-size: 1.25rem; margin-bottom: 0.5rem;">5. App to App Handshake</h3>
+          <p style="font-size: 0.9rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 1rem;">
+            Proceeding to pay opens the installed payment app (Google Pay) via UPI deep link intent. Cart value is auto-typed into GPay with direct settlement into Instaa Admin Bank Account.
+          </p>
+          <a href="customer/checkout.html" class="btn btn-outline btn-sm" style="margin-top: auto;">
+            Inspect GPay Handshake &rarr;
+          </a>
+        </div>
+
+        <!-- 6. Built-in Google Map & Damaged Return -->
+        <div class="feature-spec-card">
+          <div class="feature-num-badge">Feature 6 & Cases</div>
+          <h3 style="font-size: 1.25rem; margin-bottom: 0.5rem;">6. Built-in GMap & Damaged Return</h3>
+          <p style="font-size: 0.9rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 1rem;">
+            Rider has an inbuilt map automatically loaded with customer destination. Case i: No damage & OTP verified. Case ii: Damaged item returned to store, deducted from store deposit, rider pay released, customer refunded in 1-2 days.
+          </p>
+          <a href="rider/active-delivery.html" class="btn btn-outline btn-sm" style="margin-top: auto;">
+            Explore In-App Map & Return &rarr;
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 Roles Section -->
+  <section class="roles-section">
+    <div class="container">
+      <div class="section-header">
+        <h2>Experience All 4 Instaa Roles</h2>
+        <p>Log in as Customer, Store Manager, Rider Partner, or Admin to test full end-to-end interactions across towns.</p>
+      </div>
+
+      <div class="roles-grid">
+        <!-- Customer Portal -->
+        <div class="role-card role-cust">
+          <div class="role-card-icon">
+            <i class="fa-solid fa-basket-shopping"></i>
+          </div>
+          <h3>1. Customer Portal</h3>
+          <p>Browse village catalog, switch towns (Town A / Town B), test "The Neighbors" popup when shops close, checkout with Google Pay handshake, and track OTP delivery.</p>
+          <div class="role-credentials-box">
+            Email: customer@demo.com<br>
+            Password: pass123
+          </div>
+          <button class="btn btn-primary btn-block" onclick="App.switchRole('customer@demo.com', 'customer')">
+            Open Customer Portal <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </div>
+
+        <!-- Store Portal -->
+        <div class="role-card role-store">
+          <div class="role-card-icon">
+            <i class="fa-solid fa-store"></i>
+          </div>
+          <h3>2. Store Fulfillment</h3>
+          <p>Toggle Shop Online/Offline duty, review incoming order items (customer address protected), pack goods, generate Store Handover OTP, and verify damaged item returns.</p>
+          <div class="role-credentials-box">
+            Email: store@demo.com<br>
+            Password: pass123
+          </div>
+          <button class="btn btn-warning btn-block" onclick="App.switchRole('store@demo.com', 'store')">
+            Open Store Operations <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </div>
+
+        <!-- Rider Portal -->
+        <div class="role-card role-rider">
+          <div class="role-card-icon">
+            <i class="fa-solid fa-motorcycle"></i>
+          </div>
+          <h3>3. Rider Partner</h3>
+          <p>Multi-town priority radar broadcasts, double-confirmation locking, 2-minute idle motion monitor, built-in Google Map navigation, and Case ii damaged return verification.</p>
+          <div class="role-credentials-box">
+            Email: rider1@demo.com (Town A)<br>
+            Password: pass123
+          </div>
+          <button class="btn btn-success btn-block" onclick="App.switchRole('rider1@demo.com', 'rider')">
+            Open Rider Partner <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </div>
+
+        <!-- Admin Portal -->
+        <div class="role-card role-admin">
+          <div class="role-card-icon">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+          <h3>4. Admin Platform ERP</h3>
+          <p>Monitor King & Queen HA Server Failover with live heartbeat, edit varying category commission slabs, toggle multi-town stores, audit Razorpay payouts, and inspect SMS logs.</p>
+          <div class="role-credentials-box">
+            Email: admin@demo.com<br>
+            Password: admin123
+          </div>
+          <button class="btn btn-outline btn-block" onclick="App.switchRole('admin@demo.com', 'admin')">
+            Open Admin ERP <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Sequence Diagram & Workflow -->
+  <section class="lifecycle-section">
+    <div class="container">
+      <div class="section-header">
+        <span style="color: var(--primary); font-weight: 700; text-transform: uppercase; font-size: 0.85rem;">Instaa Sequence Flow</span>
+        <h2>End-to-End Hyperlocal Workflow</h2>
+        <p>Customer GPAY payment &rarr; Store Handover &rarr; Rider Built-in Map &rarr; Two-Stage OTP &rarr; Razorpay Payouts.</p>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem;">
+        <div style="background: var(--bg-main); border: 1px solid var(--border-light); padding: 1.25rem; border-radius: var(--radius-lg); text-align: center;">
+          <div style="font-size: 1.5rem; color: #2563eb; margin-bottom: 0.5rem;"><i class="fa-brands fa-google-pay"></i></div>
+          <h4 style="font-size: 0.95rem; margin-bottom: 0.25rem;">1. GPay Handshake</h4>
+          <p style="font-size: 0.8rem; color: var(--text-muted);">Auto-typed amount & deposit to Instaa Admin account</p>
+        </div>
+        <div style="background: var(--bg-main); border: 1px solid var(--border-light); padding: 1.25rem; border-radius: var(--radius-lg); text-align: center;">
+          <div style="font-size: 1.5rem; color: #d97706; margin-bottom: 0.5rem;"><i class="fa-solid fa-box"></i></div>
+          <h4 style="font-size: 0.95rem; margin-bottom: 0.25rem;">2. Items Only Alert</h4>
+          <p style="font-size: 0.8rem; color: var(--text-muted);">Store sees items ONLY. Customer location hidden for privacy.</p>
+        </div>
+        <div style="background: var(--bg-main); border: 1px solid var(--border-light); padding: 1.25rem; border-radius: var(--radius-lg); text-align: center;">
+          <div style="font-size: 1.5rem; color: #10b981; margin-bottom: 0.5rem;"><i class="fa-solid fa-stopwatch"></i></div>
+          <h4 style="font-size: 0.95rem; margin-bottom: 0.25rem;">3. Town Priority & Timeout</h4>
+          <p style="font-size: 0.8rem; color: var(--text-muted);">Local town riders prioritized. 2-min idle timeout monitoring.</p>
+        </div>
+        <div style="background: var(--bg-main); border: 1px solid var(--border-light); padding: 1.25rem; border-radius: var(--radius-lg); text-align: center;">
+          <div style="font-size: 1.5rem; color: #6366f1; margin-bottom: 0.5rem;"><i class="fa-solid fa-map-location-dot"></i></div>
+          <h4 style="font-size: 0.95rem; margin-bottom: 0.25rem;">4. Built-in Google Map</h4>
+          <p style="font-size: 0.8rem; color: var(--text-muted);">Store Handover OTP unlocks customer destination & map navigation.</p>
+        </div>
+        <div style="background: var(--bg-main); border: 1px solid var(--border-light); padding: 1.25rem; border-radius: var(--radius-lg); text-align: center;">
+          <div style="font-size: 1.5rem; color: #ec4899; margin-bottom: 0.5rem;"><i class="fa-solid fa-code-compare"></i></div>
+          <h4 style="font-size: 0.95rem; margin-bottom: 0.25rem;">5. Case i vs Case ii</h4>
+          <p style="font-size: 0.8rem; color: var(--text-muted);">No damage: Payout credited. Damage: Return to store, deposit deducted, refund in 1-2 days.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container text-center">
+      <p><strong>instaa &bull; Rural Hyperlocal Q-Commerce Ecosystem</strong></p>
+      <p style="margin-top: 0.5rem; font-size: 0.8rem;">Groceries Made Easier. Pure HTML5, CSS3, & Vanilla JavaScript with local persistence.</p>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="js/storage.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/products.js"></script>
+  <script src="js/cart.js"></script>
+  <script src="js/orders.js"></script>
+  <script src="js/dispatch.js"></script>
+  <script src="js/otp.js"></script>
+  <script src="js/wallet.js"></script>
+  <script src="js/notifications.js"></script>
+  <script src="js/ha-server.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

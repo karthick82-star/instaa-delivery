@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin ERP Dashboard - Smart Store Delivery</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/admin.css">
+</head>
+<body class="dashboard-layout">
+
+  <!-- Sidebar -->
+  <aside class="dashboard-sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon" style="background: linear-gradient(135deg, #7c3aed, #6366f1);">
+        <i class="fa-solid fa-shield-halved"></i>
+      </div>
+      <div class="brand-text">
+        <h2>SmartAdmin</h2>
+        <span>Platform Executive ERP</span>
+      </div>
+    </div>
+
+    <div class="sidebar-role-badge">
+      <i class="fa-solid fa-lock"></i>
+      <span>Logged in as <strong>Administrator</strong></span>
+    </div>
+
+    <ul class="sidebar-nav">
+      <div class="nav-section-title">Administration</div>
+      <li><a href="admin-dashboard.html" class="active"><i class="fa-solid fa-chart-pie"></i> Executive Overview</a></li>
+      <li><a href="orders.html"><i class="fa-solid fa-boxes-stacked"></i> Master Order Log</a></li>
+      <li><a href="riders.html"><i class="fa-solid fa-motorcycle"></i> Rider Fleet & Radar</a></li>
+      <li><a href="customers.html"><i class="fa-solid fa-users"></i> Customer Database</a></li>
+      <li><a href="store-management.html"><i class="fa-solid fa-store"></i> Store & Commission</a></li>
+      <li><a href="server-health.html"><i class="fa-solid fa-server text-warning"></i> King & Queen HA Monitor</a></li>
+      <li><a href="payments.html"><i class="fa-solid fa-credit-card"></i> Payment Transactions</a></li>
+      <li><a href="reports.html"><i class="fa-solid fa-chart-line"></i> Analytics & Reports</a></li>
+    </ul>
+
+    <div class="sidebar-user">
+      <div class="user-profile-info">
+        <img src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&auto=format&fit=crop&q=80" alt="Admin" class="user-profile-avatar">
+        <div class="user-profile-text">
+          <div class="user-name">Chief Administrator</div>
+          <div class="user-role">Superuser Access</div>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="Auth.logoutUser()" title="Logout">
+        <i class="fa-solid fa-power-off"></i>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dashboard-main">
+    <header class="dashboard-header">
+      <div class="header-left">
+        <button class="mobile-toggle" id="mobile-sidebar-toggle">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="header-title-box">
+          <h1>Platform Operations ERP</h1>
+          <p>Live real-time monitoring of orders, online riders, dual OTPs, and financials</p>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <button class="btn btn-outline btn-sm" onclick="loadAdminDashboard()">
+          <i class="fa-solid fa-rotate"></i> Sync System
+        </button>
+        <button class="header-btn" id="btn-notifications" title="Notifications">
+          <i class="fa-regular fa-bell"></i>
+          <span class="header-badge notif-badge">0</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="dashboard-content">
+
+      <!-- THE KING & QUEEN HA CLUSTER LIVE QUICK STATUS (Feature 1) -->
+      <div style="background: linear-gradient(135deg, #1e293b, #0f172a); color: #fff; padding: 1.25rem 1.5rem; border-radius: var(--radius-lg); margin-bottom: 1.75rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div class="flex items-center gap-3">
+          <div style="font-size: 2rem;">👑👸</div>
+          <div>
+            <div class="flex items-center gap-2">
+              <strong style="font-size: 1.1rem;">THE KING & QUEEN: High Availability Cluster</strong>
+              <span class="badge badge-success" id="dash-ha-status-badge">KING ACTIVE (AWS Mumbai)</span>
+            </div>
+            <p style="font-size: 0.82rem; color: #94a3b8; margin-top: 0.2rem;">
+              Heartbeat check every 3s. Automatic zero-intervention failover to QUEEN (GCP Bangalore) with SMS alerts.
+            </p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <a href="server-health.html" class="btn btn-outline btn-sm" style="color: #60a5fa; border-color: #3b82f6;">
+            <i class="fa-solid fa-server"></i> Launch HA Monitor & Failover Test &rarr;
+          </a>
+        </div>
+      </div>
+
+      <!-- Section Title -->
+      <div class="flex justify-between items-center" style="margin-bottom: 1.25rem;">
+        <div>
+          <h3>System Metrics KPI</h3>
+          <p style="font-size: 0.85rem; color: var(--text-muted);">Real-time aggregated health statistics</p>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="App.autoSimulateOrder()">
+          <i class="fa-solid fa-wand-magic-sparkles"></i> Simulate Live Order & Dispatch
+        </button>
+      </div>
+
+      <!-- EXACT 8 DASHBOARD CARDS SPECIFIED IN REQUIREMENTS -->
+      <div class="admin-metrics-grid">
+        <!-- 1. Total Customers -->
+        <div class="admin-stat-card stat-indigo">
+          <div class="admin-stat-header">
+            <span class="admin-stat-title">1. Total Customers</span>
+            <div class="admin-stat-icon-sm" style="background: var(--indigo-light); color: var(--indigo);">
+              <i class="fa-solid fa-users"></i>
+            </div>
+          </div>
+          <div class="admin-stat-number" id="stat-total-customers">0</div>
+          <div class="admin-stat-footer"><a href="customers.html">Manage Customers &rarr;</a></div>
+        </div>
+
+        <!-- 2. Total Riders -->
+        <div class="admin-stat-card stat-purple">
+          <div class="admin-stat-header">
+            <span class="admin-stat-title">2. Total Riders</span>
+            <div class="admin-stat-icon-sm" style="background: var(--purple-light); color: var(--purple);">
+              <i class="fa-solid fa-motorcycle"></i>
+            </div>
+          </div>
+          <div class="admin-stat-number" id="stat-total-riders">0</div>
+          <div class="admin-stat-footer"><a href="riders.html">Fleet Directory &rarr;</a></div>
+        </div>
+
+        <!-- 3. Total Orders -->
+        <div class="admin-stat-card">
+          <div class="admin-stat-header">
+            <span class="admin-stat-title">3. Total Orders</span>
+            <div class="admin-stat-icon-sm" style="background: var(--primary-light); color: var(--primary);">
+              <i class="fa-solid fa-boxes-stacked"></i>
+            </div>
+          </div>
+          <div class="admin-stat-number" id="stat-total-orders">0</div>
+          <div class="admin-stat-footer"><a href="orders.html">Master Log &rarr;</a></div>
+        </div>
+
+        <!-- 4. Active Riders (Online) -->
+        <div class="admin-stat-card stat-green">
+          <div class="admin-stat-header">
+            <span class="admin-stat-title">4. Active Riders</span>
+            <div class="admin-stat-icon-sm" style="background: var(--success-light); color: var(--success);">
+              <i class="fa-solid fa-circle-dot"></i>
+            </div>
+          </div>
+          <div class="admin-stat-number text-success" id="stat-active-riders">0</div>
+          <div class="admin-stat-footer"><i class="fa-solid fa-signal text-success"></i> Online on Radar</div>
+        </div>
+
+        <!-- 5. Completed Deliveries -->
+        <div class="admin-stat-card stat-green">
+          <div class="admin-stat-header">
+            <span class="admin-stat-title">5. Completed Trips</span>
+            <div class="admin-stat-icon-sm" style="background: var(--success-light); color: var(--success);">
+              <i class="fa-solid fa-circle-check"></i>
+            </div>
+          </div>
+          <div class="admin-stat-number text-success" id="stat-completed-deliveries">0</div>
+          <div class="admin-stat-footer"><i class="fa-solid fa-badge-check"></i> Customer OTP Verified</div>
+        </div>
+
+        <!-- 6. Cancelled Orders -->
+        <div class="admin-stat-card stat-red">
+          <div class="admin-stat-header">
+            <span class="admin-stat-title">6. Cancelled / Rejected</span>
+            <div class="admin-stat-icon-sm" style="background: var(--danger-light); color: var(--danger);">
+              <i class="fa-solid fa-ban"></i>
+            </div>
+          </div>
+          <div class="admin-stat-number text-danger" id="stat-cancelled-orders">0</div>
+          <div class="admin-stat-footer"><i class="fa-solid fa-triangle-exclamation"></i> Aborted lifecycle</div>
+        </div>
+
+        <!-- 7. Total Store Earnings -->
+        <div class="admin-stat-card stat-amber">
+          <div class="admin-stat-header">
+            <span class="admin-stat-title">7. Total Store Net</span>
+            <div class="admin-stat-icon-sm" style="background: var(--warning-light); color: var(--warning-dark);">
+              <i class="fa-solid fa-store"></i>
+            </div>
+          </div>
+          <div class="admin-stat-number text-warning" id="stat-store-earnings">₹0.00</div>
+          <div class="admin-stat-footer">Subtotal minus 10% fee</div>
+        </div>
+
+        <!-- 8. Total Rider Earnings -->
+        <div class="admin-stat-card stat-green">
+          <div class="admin-stat-header">
+            <span class="admin-stat-title">8. Total Rider Net</span>
+            <div class="admin-stat-icon-sm" style="background: var(--success-light); color: var(--success);">
+              <i class="fa-solid fa-money-bill-wave"></i>
+            </div>
+          </div>
+          <div class="admin-stat-number text-success" id="stat-rider-earnings">₹0.00</div>
+          <div class="admin-stat-footer">Direct delivery fees</div>
+        </div>
+      </div>
+
+      <!-- Financial Split Breakdown Visual Card -->
+      <div class="card" style="margin-bottom: 2rem;">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i class="fa-solid fa-pie-chart text-purple"></i> Revenue Distribution Split
+          </h3>
+          <span class="badge badge-purple">Transparent Marketplace Model</span>
+        </div>
+        <div class="card-body">
+          <div class="flex justify-between items-center" style="font-size: 0.9rem;">
+            <span>Customer Gross Paid: <strong id="gross-customer-paid">₹0.00</strong></span>
+            <span>Platform Gross Revenue: <strong id="platform-net-revenue" style="color: var(--purple);">₹0.00</strong></span>
+          </div>
+
+          <div class="financial-split-bar">
+            <div class="split-segment split-store" id="bar-store-segment" style="width: 70%;" title="Store Payout"></div>
+            <div class="split-segment split-rider" id="bar-rider-segment" style="width: 18%;" title="Rider Delivery Earnings"></div>
+            <div class="split-segment split-platform" id="bar-platform-segment" style="width: 12%;" title="Platform Margin"></div>
+          </div>
+
+          <div class="split-legend">
+            <div class="legend-item">
+              <span class="legend-dot" style="background-color: #3b82f6;"></span>
+              <span>Store Payout: <strong id="legend-store-amount">₹0.00</strong></span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-dot" style="background-color: #10b981;"></span>
+              <span>Rider Fees: <strong id="legend-rider-amount">₹0.00</strong></span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-dot" style="background-color: #8b5cf6;"></span>
+              <span>Platform Margin (10% + fee): <strong id="legend-platform-amount">₹0.00</strong></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Real-Time Order Stream & Dual OTP Monitor -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i class="fa-solid fa-satellite-dish text-primary"></i> Live Order Dispatch Stream & Dual OTP Auditor
+          </h3>
+          <a href="orders.html" class="btn btn-outline btn-sm">View Full Master Log &rarr;</a>
+        </div>
+        <div class="card-body" style="padding: 0;">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Customer</th>
+                  <th>Rider Assigned</th>
+                  <th>Total Amount</th>
+                  <th>Store Handover OTP</th>
+                  <th>Customer Delivery OTP</th>
+                  <th>Lifecycle Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="admin-orders-stream-tbody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Scripts -->
+  <script src="../js/storage.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/products.js"></script>
+  <script src="../js/cart.js"></script>
+  <script src="../js/orders.js"></script>
+  <script src="../js/dispatch.js"></script>
+  <script src="../js/otp.js"></script>
+  <script src="../js/wallet.js"></script>
+  <script src="../js/notifications.js"></script>
+  <script src="../js/ha-server.js"></script>
+  <script src="../js/app.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      Auth.checkAuth(['admin']);
+      loadAdminDashboard();
+    });
+
+    function loadAdminDashboard() {
+      // Update King & Queen HA Status badge
+      if (typeof HAServer !== 'undefined') {
+        const ha = HAServer.getState();
+        const haBadge = document.getElementById('dash-ha-status-badge');
+        if (haBadge) {
+          if (ha.activeServer === 'KING') {
+            haBadge.className = 'badge badge-success';
+            haBadge.textContent = 'KING ACTIVE (AWS Mumbai)';
+          } else {
+            haBadge.className = 'badge badge-warning';
+            haBadge.textContent = 'QUEEN PROMOTED ACTIVE (GCP Bangalore)';
+          }
+        }
+      }
+
+      const users = Storage.get(STORAGE_KEYS.USERS, []);
+      const orders = Orders.getAll();
+
+      const customers = users.filter(u => u.role === 'customer');
+      const riders = users.filter(u => u.role === 'rider');
+      const onlineRiders = riders.filter(u => u.status === 'ONLINE');
+
+      const completedOrders = orders.filter(o => o.status === ORDER_STATUS.DELIVERED);
+      const cancelledOrders = orders.filter(o => [ORDER_STATUS.CANCELLED, ORDER_STATUS.REJECTED].includes(o.status));
+
+      // Financials
+      const storeWallet = Wallet.getStoreWallet();
+      const allTransactions = Wallet.getAllTransactions();
+
+      let totalRiderEarned = 0;
+      Object.values(Storage.get(STORAGE_KEYS.RIDER_WALLETS, {})).forEach(w => {
+        totalRiderEarned += (w.totalEarnings || 0);
+      });
+
+      let totalGross = orders.reduce((sum, o) => sum + (o.total || 0), 0);
+      let totalStoreEarned = orders.reduce((sum, o) => sum + (o.storeEarnings || 0), 0);
+      let totalPlatformEarned = orders.reduce((sum, o) => sum + (o.platformEarnings || 0), 0);
+
+      // Populate 8 Cards
+      document.getElementById('stat-total-customers').textContent = customers.length;
+      document.getElementById('stat-total-riders').textContent = riders.length;
+      document.getElementById('stat-total-orders').textContent = orders.length;
+      document.getElementById('stat-active-riders').textContent = onlineRiders.length;
+      document.getElementById('stat-completed-deliveries').textContent = completedOrders.length;
+      document.getElementById('stat-cancelled-orders').textContent = cancelledOrders.length;
+      document.getElementById('stat-store-earnings').textContent = App.formatCurrency(totalStoreEarned);
+      document.getElementById('stat-rider-earnings').textContent = App.formatCurrency(totalRiderEarned);
+
+      // Populate Split Bar
+      document.getElementById('gross-customer-paid').textContent = App.formatCurrency(totalGross);
+      document.getElementById('platform-net-revenue').textContent = App.formatCurrency(totalPlatformEarned);
+      document.getElementById('legend-store-amount').textContent = App.formatCurrency(totalStoreEarned);
+      document.getElementById('legend-rider-amount').textContent = App.formatCurrency(totalRiderEarned);
+      document.getElementById('legend-platform-amount').textContent = App.formatCurrency(totalPlatformEarned);
+
+      // Stream Table
+      const tbody = document.getElementById('admin-orders-stream-tbody');
+      if (orders.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 2.5rem;">No orders registered yet.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = orders.slice(0, 6).map(o => `
+        <tr>
+          <td><strong style="color: var(--primary);">#${o.id}</strong></td>
+          <td>${o.customerName}</td>
+          <td>
+            ${o.assignedRiderName ? `<span class="badge badge-indigo"><i class="fa-solid fa-motorcycle"></i> ${o.assignedRiderName}</span>` : '<span style="color: var(--text-light);">Unassigned</span>'}
+          </td>
+          <td><strong>${App.formatCurrency(o.total)}</strong></td>
+          <td>
+            ${o.storeOtp ? `<code style="font-weight: 700; color: #b45309; background: #fef3c7; padding: 0.2rem 0.5rem; border-radius: 4px;">${o.storeOtp}</code>` : '<span style="color: var(--text-light);">Not generated</span>'}
+          </td>
+          <td>
+            ${o.customerOtp ? `<code style="font-weight: 700; color: #1e40af; background: #dbeafe; padding: 0.2rem 0.5rem; border-radius: 4px;">${o.customerOtp}</code>` : '<span style="color: var(--text-light);">Not generated</span>'}
+          </td>
+          <td>${App.getStatusBadge(o.status)}</td>
+          <td>
+            <a href="orders.html?orderId=${o.id}" class="btn btn-outline btn-sm">Inspect Lifecycle</a>
+          </td>
+        </tr>
+      `).join('');
+    }
+  </script>
+</body>
+</html>

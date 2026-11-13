@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customer Dashboard - Smart Store Delivery</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/customer.css">
+</head>
+<body class="dashboard-layout">
+
+  <!-- Sidebar -->
+  <aside class="dashboard-sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon" style="background: linear-gradient(135deg, #10b981, #059669);">
+        <i class="fa-solid fa-bicycle"></i>
+      </div>
+      <div class="brand-text">
+        <h2>instaa</h2>
+        <span style="font-size: 0.7rem; letter-spacing: 0.5px;">GROCERIES MADE EASIER</span>
+      </div>
+    </div>
+
+    <div class="sidebar-role-badge">
+      <i class="fa-solid fa-circle-user"></i>
+      <span>Logged in as <strong>Customer</strong></span>
+    </div>
+
+    <ul class="sidebar-nav">
+      <div class="nav-section-title">Shop & Deliver</div>
+      <li><a href="customer-dashboard.html" class="active"><i class="fa-solid fa-house"></i> Home Dashboard</a></li>
+      <li><a href="products.html"><i class="fa-solid fa-store"></i> Browse Products</a></li>
+      <li>
+        <a href="cart.html">
+          <i class="fa-solid fa-cart-shopping"></i> My Basket
+          <span class="nav-badge cart-badge">0</span>
+        </a>
+      </li>
+      <li><a href="order-tracking.html"><i class="fa-solid fa-route"></i> Live Tracking</a></li>
+      <li><a href="order-history.html"><i class="fa-solid fa-clock-rotate-left"></i> Order History</a></li>
+    </ul>
+
+    <div class="sidebar-user">
+      <div class="user-profile-info">
+        <img src="" alt="User" class="user-profile-avatar user-avatar" onerror="this.src='https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80'">
+        <div class="user-profile-text">
+          <div class="user-name">Loading...</div>
+          <div class="user-role">Customer</div>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="Auth.logoutUser()" title="Logout">
+        <i class="fa-solid fa-power-off"></i>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dashboard-main">
+    <!-- Header -->
+    <header class="dashboard-header">
+      <div class="header-left">
+        <button class="mobile-toggle" id="mobile-sidebar-toggle">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="header-title-box">
+          <h1>Welcome, <span class="user-name">Priya</span> 👋</h1>
+          <p>Order fresh groceries delivered in 20 minutes</p>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <a href="cart.html" class="header-btn" title="View Cart">
+          <i class="fa-solid fa-bag-shopping"></i>
+          <span class="header-badge cart-badge">0</span>
+        </a>
+        <button class="header-btn" id="btn-notifications" title="Notifications">
+          <i class="fa-regular fa-bell"></i>
+          <span class="header-badge notif-badge">0</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Dashboard Content Area -->
+    <div class="dashboard-content">
+      
+      <!-- Active Order Callout (if active order exists) -->
+      <div id="active-order-banner" style="display: none; margin-bottom: 2rem;"></div>
+
+      <!-- Store Info Card -->
+      <div class="store-banner-card">
+        <div class="store-meta-left">
+          <img src="https://images.unsplash.com/photo-1578916171728-46686eac8d58?w=200&auto=format&fit=crop&q=80" alt="FreshMart" class="store-avatar-lg">
+          <div class="store-meta-text">
+            <h2>FreshMart Superstore</h2>
+            <p><i class="fa-solid fa-location-dot"></i> 108 Market Square, Central Metro • Delivery in 15-20 Mins</p>
+            <div class="store-badge-group">
+              <span class="store-badge-item"><i class="fa-solid fa-star text-warning"></i> 4.9 Rating</span>
+              <span class="store-badge-item"><i class="fa-solid fa-shield-halved text-success"></i> Verified Store</span>
+              <span class="store-badge-item"><i class="fa-solid fa-leaf text-success"></i> 100% Fresh Guarantee</span>
+            </div>
+          </div>
+        </div>
+        <div class="store-banner-stats">
+          <div class="store-stat-box">
+            <span>Operating Hours</span>
+            <strong>7 AM - 11 PM</strong>
+          </div>
+          <div class="store-stat-box">
+            <span>Avg Dispatch</span>
+            <strong>8 Mins</strong>
+          </div>
+          <a href="products.html" class="btn btn-primary btn-lg">
+            <i class="fa-solid fa-store"></i> Shop All Items
+          </a>
+        </div>
+      </div>
+
+      <!-- Category Filter Carousel -->
+      <div style="margin-bottom: 2rem;">
+        <div class="flex justify-between items-center" style="margin-bottom: 1rem;">
+          <h3>Shop by Category</h3>
+          <a href="products.html" style="font-size: 0.9rem; font-weight: 600;">View All Products &rarr;</a>
+        </div>
+        <div class="category-filter-bar">
+          <button class="category-pill active" onclick="location.href='products.html?category=All'"><i class="fa-solid fa-shapes"></i> All Items</button>
+          <button class="category-pill" onclick="location.href='products.html?category=Kitchen%20Staples'"><i class="fa-solid fa-bowl-rice"></i> Kitchen Staples (3-4% comm)</button>
+          <button class="category-pill" onclick="location.href='products.html?category=Dairy%20%26%20Daily%20Essentials'"><i class="fa-solid fa-egg"></i> Dairy & Essentials (3-5% comm)</button>
+          <button class="category-pill" onclick="location.href='products.html?category=Packaged%20FMCG%20%26%20Snacks'"><i class="fa-solid fa-cookie-bite"></i> Snacks & FMCG (6-8% comm)</button>
+          <button class="category-pill" onclick="location.href='products.html?category=Personal%20Care%20%26%20Household'"><i class="fa-solid fa-pump-soap"></i> Personal Care (8-10% comm)</button>
+          <button class="category-pill" onclick="location.href='products.html?category=Fruits%20%26%20Veggies'"><i class="fa-solid fa-apple-whole"></i> Fruits & Veggies</button>
+          <button class="category-pill" onclick="location.href='products.html?category=Beverages'"><i class="fa-solid fa-mug-hot"></i> Beverages</button>
+        </div>
+      </div>
+
+      <!-- Featured Bestsellers Grid -->
+      <div style="margin-bottom: 2.5rem;">
+        <div class="flex justify-between items-center" style="margin-bottom: 1.25rem;">
+          <div>
+            <h3>🔥 Popular Fresh Picks Today</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Handpicked daily essentials with great discounts</p>
+          </div>
+          <a href="products.html" class="btn btn-outline btn-sm">Explore 16+ Items</a>
+        </div>
+
+        <div class="products-grid" id="featured-products-grid">
+          <!-- Dynamically populated via JS -->
+        </div>
+      </div>
+
+      <!-- Recent Orders Card -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title"><i class="fa-solid fa-clock-rotate-left text-primary"></i> Your Recent Orders</h3>
+          <a href="order-history.html" class="btn btn-outline btn-sm">View Full History</a>
+        </div>
+        <div class="card-body" style="padding: 0;">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Date & Time</th>
+                  <th>Items</th>
+                  <th>Total Amount</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="recent-orders-tbody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Scripts -->
+  <script src="../js/storage.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/products.js"></script>
+  <script src="../js/cart.js"></script>
+  <script src="../js/orders.js"></script>
+  <script src="../js/dispatch.js"></script>
+  <script src="../js/otp.js"></script>
+  <script src="../js/wallet.js"></script>
+  <script src="../js/notifications.js"></script>
+  <script src="../js/app.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const user = Auth.checkAuth(['customer']);
+      if (!user) return;
+
+      loadDashboardData();
+    });
+
+    function loadDashboardData() {
+      const user = Auth.getCurrentUser();
+      const myOrders = Orders.getByCustomer(user.id);
+
+      // Check for active order
+      const activeOrder = myOrders.find(o => ![ORDER_STATUS.DELIVERED, ORDER_STATUS.CANCELLED, ORDER_STATUS.REJECTED].includes(o.status));
+      const activeBanner = document.getElementById('active-order-banner');
+
+      if (activeOrder) {
+        activeBanner.style.display = 'block';
+        activeBanner.innerHTML = `
+          <div class="card" style="border: 2px solid var(--primary); background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%);">
+            <div class="card-body flex justify-between items-center flex-wrap gap-2">
+              <div class="flex items-center gap-3">
+                <div style="width: 52px; height: 52px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+                  <i class="fa-solid fa-motorcycle"></i>
+                </div>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <h3 style="margin: 0;">Order #${activeOrder.id} is Active!</h3>
+                    ${App.getStatusBadge(activeOrder.status)}
+                  </div>
+                  <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;">
+                    ${activeOrder.assignedRiderName ? `Assigned to Rider <strong>${activeOrder.assignedRiderName}</strong>` : 'Store is preparing your items'} • Customer OTP: <strong style="color: var(--primary);">${activeOrder.customerOtp}</strong>
+                  </p>
+                </div>
+              </div>
+              <a href="order-tracking.html?orderId=${activeOrder.id}" class="btn btn-primary">
+                <i class="fa-solid fa-route"></i> Live Tracking &rarr;
+              </a>
+            </div>
+          </div>
+        `;
+      } else {
+        activeBanner.style.display = 'none';
+      }
+
+      // Render 4 Featured Products
+      const allProducts = Products.getAll();
+      const featured = allProducts.slice(0, 4);
+      const featuredContainer = document.getElementById('featured-products-grid');
+      featuredContainer.innerHTML = featured.map(p => {
+        const qty = Cart.getProductQty(p.id);
+        return Products.renderCard(p, qty);
+      }).join('');
+
+      // Render Recent Orders Table (up to 3)
+      const recentTbody = document.getElementById('recent-orders-tbody');
+      const recent = myOrders.slice(0, 3);
+
+      if (recent.length === 0) {
+        recentTbody.innerHTML = `
+          <tr>
+            <td colspan="6" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
+              <i class="fa-solid fa-basket-shopping" style="font-size: 2rem; display: block; margin-bottom: 0.5rem; color: #cbd5e1;"></i>
+              You haven't placed any orders yet. <a href="products.html">Start Shopping!</a>
+            </td>
+          </tr>
+        `;
+      } else {
+        recentTbody.innerHTML = recent.map(o => `
+          <tr>
+            <td><strong>#${o.id}</strong></td>
+            <td>${App.formatDateTime(o.createdAt)}</td>
+            <td>${o.items.length} item(s)</td>
+            <td><strong>${App.formatCurrency(o.total)}</strong></td>
+            <td>${App.getStatusBadge(o.status)}</td>
+            <td>
+              <a href="order-tracking.html?orderId=${o.id}" class="btn btn-outline btn-sm">
+                <i class="fa-solid fa-eye"></i> View Order
+              </a>
+            </td>
+          </tr>
+        `).join('');
+      }
+    }
+  </script>
+</body>
+</html>

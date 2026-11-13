@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Store & Commission Policy - Instaa Admin ERP</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/admin.css">
+</head>
+<body class="dashboard-layout">
+
+  <!-- Sidebar -->
+  <aside class="dashboard-sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon" style="background: linear-gradient(135deg, #7c3aed, #6366f1);">
+        <i class="fa-solid fa-shield-halved"></i>
+      </div>
+      <div class="brand-text">
+        <h2>InstaaAdmin</h2>
+        <span>Platform Executive ERP</span>
+      </div>
+    </div>
+
+    <div class="sidebar-role-badge">
+      <i class="fa-solid fa-lock"></i>
+      <span>Logged in as <strong>Administrator</strong></span>
+    </div>
+
+    <ul class="sidebar-nav">
+      <div class="nav-section-title">Administration</div>
+      <li><a href="admin-dashboard.html"><i class="fa-solid fa-chart-pie"></i> Executive Overview</a></li>
+      <li><a href="orders.html"><i class="fa-solid fa-boxes-stacked"></i> Master Order Log</a></li>
+      <li><a href="riders.html"><i class="fa-solid fa-motorcycle"></i> Rider Fleet & Radar</a></li>
+      <li><a href="customers.html"><i class="fa-solid fa-users"></i> Customer Database</a></li>
+      <li><a href="store-management.html" class="active"><i class="fa-solid fa-store"></i> Store & Commission</a></li>
+      <li><a href="server-health.html"><i class="fa-solid fa-server text-warning"></i> King & Queen HA Monitor</a></li>
+      <li><a href="payments.html"><i class="fa-solid fa-credit-card"></i> Payment Transactions</a></li>
+      <li><a href="reports.html"><i class="fa-solid fa-chart-line"></i> Analytics & Reports</a></li>
+    </ul>
+
+    <div class="sidebar-user">
+      <div class="user-profile-info">
+        <img src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&auto=format&fit=crop&q=80" alt="Admin" class="user-profile-avatar">
+        <div class="user-profile-text">
+          <div class="user-name">Chief Administrator</div>
+          <div class="user-role">Superuser Access</div>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="Auth.logoutUser()" title="Logout">
+        <i class="fa-solid fa-power-off"></i>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dashboard-main">
+    <header class="dashboard-header">
+      <div class="header-left">
+        <button class="mobile-toggle" id="mobile-sidebar-toggle">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="header-title-box">
+          <h1>Stores & Commission Policy</h1>
+          <p>Multi-town shop online/offline controls, varying category commission slabs, and deposits</p>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <button class="btn btn-primary btn-sm" onclick="openAddProductModal()">
+          <i class="fa-solid fa-plus"></i> Add New Product
+        </button>
+      </div>
+    </header>
+
+    <div class="dashboard-content">
+
+      <!-- Multi-Town Stores Table (Feature 2: The Neighbors) -->
+      <div class="card" style="margin-bottom: 2rem;">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i class="fa-solid fa-store text-primary"></i> Multi-Town Stores & Security Deposits (Feature 2)
+          </h3>
+          <span class="badge badge-success">Online / Offline Toggling Enabled</span>
+        </div>
+        <div class="card-body" style="padding: 0;">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Store Brand</th>
+                  <th>Operating Town</th>
+                  <th>Manager</th>
+                  <th>Security Deposit (Damage Deduction)</th>
+                  <th>Duty Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="admin-stores-tbody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- FEATURE 4: VARYING COMMISSION SLABS -->
+      <div class="card" style="margin-bottom: 2rem;">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i class="fa-solid fa-percent text-purple"></i> Category-wise Varying Commission Slabs (Feature 4)
+          </h3>
+          <span class="badge badge-purple">Real-Time Ledger Engine</span>
+        </div>
+        <div class="card-body">
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">
+            Commission is deducted from grocery items depending on their category slab. Virtual ledgers are updated only after applying these rates. Admin can edit rates anytime.
+          </p>
+
+          <form onsubmit="saveVaryingCommissionSlabs(event)">
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.25rem; margin-bottom: 1.5rem;">
+              
+              <!-- Slab 1: Kitchen Staples -->
+              <div style="background: var(--bg-alt); padding: 1.25rem; border-radius: var(--radius-md); border-left: 4px solid var(--primary);">
+                <div class="flex justify-between items-center" style="margin-bottom: 0.5rem;">
+                  <strong>1. Kitchen Staples</strong>
+                  <span class="badge badge-primary">Slab: 3% - 4%</span>
+                </div>
+                <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.75rem;">Rice, Atta, Cooking Oils, Pulses</p>
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label class="form-label" style="font-size: 0.8rem;">Commission Rate (%)</label>
+                  <input type="number" id="slab-staples" class="form-control" step="0.5" min="1" max="10" required>
+                </div>
+              </div>
+
+              <!-- Slab 2: Dairy & Daily Essentials -->
+              <div style="background: var(--bg-alt); padding: 1.25rem; border-radius: var(--radius-md); border-left: 4px solid var(--success);">
+                <div class="flex justify-between items-center" style="margin-bottom: 0.5rem;">
+                  <strong>2. Dairy & Daily Essentials</strong>
+                  <span class="badge badge-success">Slab: 3% - 5%</span>
+                </div>
+                <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.75rem;">Milk, Paneer, Curd, Butter, Eggs</p>
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label class="form-label" style="font-size: 0.8rem;">Commission Rate (%)</label>
+                  <input type="number" id="slab-dairy" class="form-control" step="0.5" min="1" max="10" required>
+                </div>
+              </div>
+
+              <!-- Slab 3: Packaged FMCG & Snacks -->
+              <div style="background: var(--bg-alt); padding: 1.25rem; border-radius: var(--radius-md); border-left: 4px solid var(--warning);">
+                <div class="flex justify-between items-center" style="margin-bottom: 0.5rem;">
+                  <strong>3. Packaged FMCG & Snacks</strong>
+                  <span class="badge badge-warning">Slab: 6% - 8%</span>
+                </div>
+                <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.75rem;">Biscuits, Chips, Namkeen, Chocolates</p>
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label class="form-label" style="font-size: 0.8rem;">Commission Rate (%)</label>
+                  <input type="number" id="slab-snacks" class="form-control" step="0.5" min="1" max="15" required>
+                </div>
+              </div>
+
+              <!-- Slab 4: Personal Care & Household -->
+              <div style="background: var(--bg-alt); padding: 1.25rem; border-radius: var(--radius-md); border-left: 4px solid var(--danger);">
+                <div class="flex justify-between items-center" style="margin-bottom: 0.5rem;">
+                  <strong>4. Personal Care & Household</strong>
+                  <span class="badge badge-danger">Slab: 8% - 10%</span>
+                </div>
+                <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.75rem;">Soaps, Detergents, Shampoos, Toothpaste</p>
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label class="form-label" style="font-size: 0.8rem;">Commission Rate (%)</label>
+                  <input type="number" id="slab-personal" class="form-control" step="0.5" min="1" max="20" required>
+                </div>
+              </div>
+
+              <!-- Slab 5: Fruits & Veggies -->
+              <div style="background: var(--bg-alt); padding: 1.25rem; border-radius: var(--radius-md); border-left: 4px solid #10b981;">
+                <div class="flex justify-between items-center" style="margin-bottom: 0.5rem;">
+                  <strong>5. Fruits & Vegetables</strong>
+                  <span class="badge badge-success">5% Default</span>
+                </div>
+                <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.75rem;">Farm-fresh mangoes, tomatoes, apples</p>
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label class="form-label" style="font-size: 0.8rem;">Commission Rate (%)</label>
+                  <input type="number" id="slab-fruits" class="form-control" step="0.5" min="1" max="15" required>
+                </div>
+              </div>
+
+              <!-- Slab 6: Beverages -->
+              <div style="background: var(--bg-alt); padding: 1.25rem; border-radius: var(--radius-md); border-left: 4px solid #6366f1;">
+                <div class="flex justify-between items-center" style="margin-bottom: 0.5rem;">
+                  <strong>6. Beverages</strong>
+                  <span class="badge badge-indigo">6% Default</span>
+                </div>
+                <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.75rem;">Ground coffee, tea, tender coconut</p>
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label class="form-label" style="font-size: 0.8rem;">Commission Rate (%)</label>
+                  <input type="number" id="slab-beverages" class="form-control" step="0.5" min="1" max="15" required>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Operational & Delivery Fee Controls -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; border-top: 1px solid var(--border-light); padding-top: 1.25rem; margin-bottom: 1.5rem;">
+              <div class="form-group">
+                <label class="form-label">Base Local Delivery Fee (₹)</label>
+                <input type="number" id="cfg-delivery-fee" class="form-control" required>
+                <small style="color: var(--text-muted); font-size: 0.75rem;">Rider pay for local town</small>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Inter-Town Delivery Fee (₹)</label>
+                <input type="number" id="cfg-intertown-fee" class="form-control" required>
+                <small style="color: var(--text-muted); font-size: 0.75rem;">Applied when local shops closed</small>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Customer Platform Fee (₹)</label>
+                <input type="number" id="cfg-platform-fee" class="form-control" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Rider Idle Timeout (Mins)</label>
+                <input type="number" id="cfg-idle-timeout" class="form-control" min="1" max="10" required>
+                <small style="color: var(--text-muted); font-size: 0.75rem;">Reassigns order if idle</small>
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-lg">
+              <i class="fa-solid fa-floppy-disk"></i> Save Varying Commission Slabs & Parameters
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Store Products Inventory Table -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i class="fa-solid fa-boxes-stacked text-primary"></i> Live Store Catalog Inventory (<span id="admin-product-count">0</span>)
+          </h3>
+          <button class="btn btn-outline btn-sm" onclick="renderProductsInventory()">
+            <i class="fa-solid fa-rotate"></i> Refresh Catalog
+          </button>
+        </div>
+        <div class="card-body" style="padding: 0;">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Category Slab</th>
+                  <th>Price</th>
+                  <th>Unit</th>
+                  <th>Stock Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="admin-inventory-tbody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Add Product Modal -->
+  <div class="modal-backdrop" id="add-product-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Add Product to Catalog</h3>
+        <p class="modal-subtitle">Enroll item mapped to commission slab</p>
+      </div>
+      <div class="modal-body">
+        <form id="add-product-form" onsubmit="handleAddProductSubmit(event)">
+          <div class="form-group">
+            <label class="form-label">Product Name</label>
+            <input type="text" id="new-prod-name" class="form-control" placeholder="e.g. Organic Sunflower Cooking Oil" required>
+          </div>
+          <div class="flex gap-2">
+            <div class="form-group" style="flex: 1;">
+              <label class="form-label">Category Slab</label>
+              <select id="new-prod-cat" class="form-control">
+                <option value="Kitchen Staples">Kitchen Staples (3-4% comm)</option>
+                <option value="Dairy & Daily Essentials">Dairy & Daily Essentials (3-5% comm)</option>
+                <option value="Packaged FMCG & Snacks">Packaged FMCG & Snacks (6-8% comm)</option>
+                <option value="Personal Care & Household">Personal Care & Household (8-10% comm)</option>
+                <option value="Fruits & Veggies">Fruits & Veggies (5% comm)</option>
+                <option value="Beverages">Beverages (6% comm)</option>
+              </select>
+            </div>
+            <div class="form-group" style="flex: 1;">
+              <label class="form-label">Price (₹)</label>
+              <input type="number" id="new-prod-price" class="form-control" step="1" min="1" required>
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <div class="form-group" style="flex: 1;">
+              <label class="form-label">Unit Weight / Qty</label>
+              <input type="text" id="new-prod-unit" class="form-control" placeholder="e.g. 1 Litre / 500g" required>
+            </div>
+            <div class="form-group" style="flex: 1;">
+              <label class="form-label">Image URL</label>
+              <input type="url" id="new-prod-image" class="form-control" placeholder="https://images.unsplash.com/...">
+            </div>
+          </div>
+          <div class="flex justify-end gap-2" style="margin-top: 1.5rem;">
+            <button type="button" class="btn btn-outline" onclick="closeAddProductModal()">Cancel</button>
+            <button type="submit" class="btn btn-primary">Add Product</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="../js/storage.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/products.js"></script>
+  <script src="../js/orders.js"></script>
+  <script src="../js/wallet.js"></script>
+  <script src="../js/notifications.js"></script>
+  <script src="../js/app.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      Auth.checkAuth(['admin']);
+      renderStoresTable();
+      loadCommissionSlabs();
+      renderProductsInventory();
+    });
+
+    function renderStoresTable() {
+      const users = Storage.get(STORAGE_KEYS.USERS, []);
+      const stores = users.filter(u => u.role === 'store');
+      const tbody = document.getElementById('admin-stores-tbody');
+
+      tbody.innerHTML = stores.map(store => `
+        <tr>
+          <td>
+            <strong>${store.name}</strong><br>
+            <small class="text-muted">${store.address || 'Town Operating Center'}</small>
+          </td>
+          <td>
+            <span class="badge badge-primary">${store.townName || 'Town A'}</span>
+          </td>
+          <td>${store.managerName || 'Manager'} (${store.phone})</td>
+          <td>
+            <strong style="color: var(--success);">₹${(store.initialDeposit || 15000).toFixed(2)}</strong>
+            <br><small class="text-muted">Security deposit for damage deductions</small>
+          </td>
+          <td>
+            <span class="badge ${store.isOnline !== false ? 'badge-success' : 'badge-danger'}">
+              <i class="fa-solid ${store.isOnline !== false ? 'fa-circle-check' : 'fa-circle-xmark'}"></i>
+              ${store.isOnline !== false ? 'ONLINE (Accepting)' : 'OFFLINE (Closed)'}
+            </span>
+          </td>
+          <td>
+            <button class="btn btn-sm ${store.isOnline !== false ? 'btn-danger' : 'btn-success'}" onclick="toggleStoreDuty('${store.id}')">
+              ${store.isOnline !== false ? 'Switch to Offline' : 'Switch to Online'}
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function toggleStoreDuty(storeId) {
+      const users = Storage.get(STORAGE_KEYS.USERS, []);
+      const index = users.findIndex(u => u.id === storeId);
+      if (index === -1) return;
+
+      const current = users[index].isOnline !== false;
+      users[index].isOnline = !current;
+      Storage.set(STORAGE_KEYS.USERS, users);
+
+      Notifications.showToast(
+        'Store Status Changed',
+        `${users[index].name} is now ${users[index].isOnline ? 'ONLINE' : 'OFFLINE'}. Neighbor town fallback active if all closed.`,
+        'info',
+        6000
+      );
+
+      renderStoresTable();
+    }
+
+    function loadCommissionSlabs() {
+      const cfg = Storage.get(STORAGE_KEYS.SYSTEM_CONFIG, DEFAULT_CONFIG);
+      const slabs = cfg.commissionSlabs || DEFAULT_CONFIG.commissionSlabs;
+
+      document.getElementById('slab-staples').value = ((slabs['Kitchen Staples']?.rate || 0.04) * 100).toFixed(1);
+      document.getElementById('slab-dairy').value = ((slabs['Dairy & Daily Essentials']?.rate || 0.04) * 100).toFixed(1);
+      document.getElementById('slab-snacks').value = ((slabs['Packaged FMCG & Snacks']?.rate || 0.07) * 100).toFixed(1);
+      document.getElementById('slab-personal').value = ((slabs['Personal Care & Household']?.rate || 0.09) * 100).toFixed(1);
+      document.getElementById('slab-fruits').value = ((slabs['Fruits & Veggies']?.rate || 0.05) * 100).toFixed(1);
+      document.getElementById('slab-beverages').value = ((slabs['Beverages']?.rate || 0.06) * 100).toFixed(1);
+
+      document.getElementById('cfg-delivery-fee').value = cfg.baseDeliveryFee || 40;
+      document.getElementById('cfg-intertown-fee').value = cfg.interTownDeliveryFee || 70;
+      document.getElementById('cfg-platform-fee').value = cfg.platformFee || 15;
+      document.getElementById('cfg-idle-timeout').value = cfg.riderIdleTimeoutMinutes || 2;
+    }
+
+    function saveVaryingCommissionSlabs(e) {
+      e.preventDefault();
+      const cfg = Storage.get(STORAGE_KEYS.SYSTEM_CONFIG, DEFAULT_CONFIG);
+
+      cfg.commissionSlabs = {
+        'Kitchen Staples': {
+          rate: parseFloat(document.getElementById('slab-staples').value) / 100,
+          label: 'Kitchen Staples (Rice, Atta, Oil)'
+        },
+        'Dairy & Daily Essentials': {
+          rate: parseFloat(document.getElementById('slab-dairy').value) / 100,
+          label: 'Dairy & Daily Essentials (Milk, Paneer)'
+        },
+        'Packaged FMCG & Snacks': {
+          rate: parseFloat(document.getElementById('slab-snacks').value) / 100,
+          label: 'Packaged FMCG & Snacks (Biscuits, Chips)'
+        },
+        'Personal Care & Household': {
+          rate: parseFloat(document.getElementById('slab-personal').value) / 100,
+          label: 'Personal Care & Household (Soaps, Detergents)'
+        },
+        'Fruits & Veggies': {
+          rate: parseFloat(document.getElementById('slab-fruits').value) / 100,
+          label: 'Fruits & Veggies'
+        },
+        'Beverages': {
+          rate: parseFloat(document.getElementById('slab-beverages').value) / 100,
+          label: 'Beverages'
+        }
+      };
+
+      cfg.baseDeliveryFee = parseFloat(document.getElementById('cfg-delivery-fee').value);
+      cfg.interTownDeliveryFee = parseFloat(document.getElementById('cfg-intertown-fee').value);
+      cfg.platformFee = parseFloat(document.getElementById('cfg-platform-fee').value);
+      cfg.riderIdleTimeoutMinutes = parseInt(document.getElementById('cfg-idle-timeout').value, 10);
+
+      Storage.set(STORAGE_KEYS.SYSTEM_CONFIG, cfg);
+      Notifications.showToast('Varying Slabs Saved!', 'Category commission rates updated. Ledgers will calculate with new rates.', 'success');
+    }
+
+    function renderProductsInventory() {
+      const products = Products.getAll();
+      document.getElementById('admin-product-count').textContent = products.length;
+
+      const tbody = document.getElementById('admin-inventory-tbody');
+      tbody.innerHTML = products.map(p => `
+        <tr>
+          <td>
+            <div class="flex items-center gap-2">
+              <img src="${p.image}" style="width: 40px; height: 40px; object-fit: cover; border-radius: var(--radius-sm);" onerror="this.src='https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&auto=format&fit=crop&q=80'">
+              <div>
+                <strong>${p.name}</strong>
+                ${p.badge ? `<span class="badge badge-primary" style="font-size: 0.65rem; margin-left: 0.35rem;">${p.badge}</span>` : ''}
+              </div>
+            </div>
+          </td>
+          <td><span class="badge badge-purple">${p.category}</span></td>
+          <td><strong>₹${p.price.toFixed(2)}</strong></td>
+          <td>${p.unit}</td>
+          <td>
+            <span class="badge ${p.inStock !== false ? 'badge-success' : 'badge-danger'}">
+              ${p.inStock !== false ? 'IN STOCK' : 'OUT OF STOCK'}
+            </span>
+          </td>
+          <td>
+            <button class="btn btn-outline btn-sm" onclick="toggleProductStock('${p.id}')">
+              ${p.inStock !== false ? 'Mark Out of Stock' : 'Mark Available'}
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function toggleProductStock(id) {
+      const products = Products.getAll();
+      const p = products.find(item => item.id === id);
+      if (p) {
+        p.inStock = p.inStock === false ? true : false;
+        Storage.set(STORAGE_KEYS.PRODUCTS, products);
+        Notifications.showToast('Stock Updated', `${p.name} marked as ${p.inStock ? 'In Stock' : 'Out of Stock'}.`, 'info');
+        renderProductsInventory();
+      }
+    }
+
+    function openAddProductModal() {
+      document.getElementById('add-product-modal').style.display = 'flex';
+    }
+
+    function closeAddProductModal() {
+      document.getElementById('add-product-modal').style.display = 'none';
+    }
+
+    function handleAddProductSubmit(e) {
+      e.preventDefault();
+      const products = Products.getAll();
+      const name = document.getElementById('new-prod-name').value.trim();
+      const category = document.getElementById('new-prod-cat').value;
+      const price = parseFloat(document.getElementById('new-prod-price').value);
+      const unit = document.getElementById('new-prod-unit').value.trim();
+      const image = document.getElementById('new-prod-image').value.trim() || 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&auto=format&fit=crop&q=80';
+
+      const newId = `PRD-${100 + products.length + 1}`;
+      products.push({
+        id: newId,
+        name,
+        category,
+        price,
+        unit,
+        rating: 4.8,
+        image,
+        description: `Freshly curated ${name} from certified rural producers.`,
+        inStock: true
+      });
+
+      Storage.set(STORAGE_KEYS.PRODUCTS, products);
+      closeAddProductModal();
+      Notifications.showToast('Product Added!', `${name} added to catalog under ${category} slab.`, 'success');
+      renderProductsInventory();
+    }
+  </script>
+</body>
+</html>

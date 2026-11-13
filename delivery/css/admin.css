@@ -1,0 +1,170 @@
+/* ==========================================================================
+   SMART STORE DELIVERY - ADMIN PANEL STYLESHEET
+   ERP Analytics Cards, Real-time Dispatch Table, Fleet Management, Financial Breakdown
+   ========================================================================== */
+
+/* 8-Card ERP Grid */
+.admin-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.admin-stat-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 120px;
+  position: relative;
+  overflow: hidden;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.admin-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.admin-stat-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background-color: var(--primary);
+}
+
+.admin-stat-card.stat-green::after { background-color: var(--success); }
+.admin-stat-card.stat-amber::after { background-color: var(--warning); }
+.admin-stat-card.stat-purple::after { background-color: var(--purple); }
+.admin-stat-card.stat-indigo::after { background-color: var(--indigo); }
+.admin-stat-card.stat-red::after { background-color: var(--danger); }
+
+.admin-stat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.admin-stat-title {
+  font-size: 0.775rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.admin-stat-icon-sm {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+}
+
+.admin-stat-number {
+  font-size: 1.75rem;
+  font-weight: 800;
+  font-family: var(--font-heading);
+  color: var(--text-main);
+  line-height: 1;
+}
+
+.admin-stat-footer {
+  font-size: 0.75rem;
+  color: var(--text-light);
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* Financial Revenue Split Card */
+.financial-split-bar {
+  display: flex;
+  height: 24px;
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  margin: 1.5rem 0 1rem;
+}
+
+.split-segment {
+  height: 100%;
+  transition: width 0.5s ease;
+}
+
+.split-store { background-color: #3b82f6; }
+.split-rider { background-color: #10b981; }
+.split-platform { background-color: #8b5cf6; }
+
+.split-legend {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+/* User & Rider Management Cards */
+.rider-fleet-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.rider-fleet-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.rider-fleet-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.rider-fleet-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border-light);
+}
+
+.rider-fleet-meta h4 {
+  font-size: 1.05rem;
+  margin-bottom: 0.2rem;
+}
+
+.rider-fleet-meta p {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}

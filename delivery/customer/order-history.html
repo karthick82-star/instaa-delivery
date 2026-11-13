@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order History - Smart Store Delivery</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/customer.css">
+</head>
+<body class="dashboard-layout">
+
+  <!-- Sidebar -->
+  <aside class="dashboard-sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon" style="background: linear-gradient(135deg, #10b981, #059669);">
+        <i class="fa-solid fa-bicycle"></i>
+      </div>
+      <div class="brand-text">
+        <h2>instaa</h2>
+        <span style="font-size: 0.7rem; letter-spacing: 0.5px;">GROCERIES MADE EASIER</span>
+      </div>
+    </div>
+
+    <div class="sidebar-role-badge">
+      <i class="fa-solid fa-circle-user"></i>
+      <span>Logged in as <strong>Customer</strong></span>
+    </div>
+
+    <ul class="sidebar-nav">
+      <div class="nav-section-title">Shop & Deliver</div>
+      <li><a href="customer-dashboard.html"><i class="fa-solid fa-house"></i> Home Dashboard</a></li>
+      <li><a href="products.html"><i class="fa-solid fa-store"></i> Browse Products</a></li>
+      <li>
+        <a href="cart.html">
+          <i class="fa-solid fa-cart-shopping"></i> My Basket
+          <span class="nav-badge cart-badge">0</span>
+        </a>
+      </li>
+      <li><a href="order-tracking.html"><i class="fa-solid fa-route"></i> Live Tracking</a></li>
+      <li><a href="order-history.html" class="active"><i class="fa-solid fa-clock-rotate-left"></i> Order History</a></li>
+    </ul>
+
+    <div class="sidebar-user">
+      <div class="user-profile-info">
+        <img src="" alt="User" class="user-profile-avatar user-avatar" onerror="this.src='https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80'">
+        <div class="user-profile-text">
+          <div class="user-name">Loading...</div>
+          <div class="user-role">Customer</div>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="Auth.logoutUser()" title="Logout">
+        <i class="fa-solid fa-power-off"></i>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dashboard-main">
+    <header class="dashboard-header">
+      <div class="header-left">
+        <button class="mobile-toggle" id="mobile-sidebar-toggle">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="header-title-box">
+          <h1>My Order History</h1>
+          <p>Review past purchases, invoices, and reorder favourite baskets</p>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <a href="products.html" class="btn btn-primary btn-sm">
+          <i class="fa-solid fa-bag-shopping"></i> Order Again
+        </a>
+      </div>
+    </header>
+
+    <div class="dashboard-content">
+      <!-- Filter Bar -->
+      <div class="category-filter-bar" style="margin-bottom: 1.5rem;">
+        <button class="category-pill active" onclick="filterHistory('ALL', this)">All Orders</button>
+        <button class="category-pill" onclick="filterHistory('ACTIVE', this)">Active Orders</button>
+        <button class="category-pill" onclick="filterHistory('DELIVERED', this)">Delivered</button>
+        <button class="category-pill" onclick="filterHistory('CANCELLED', this)">Cancelled</button>
+      </div>
+
+      <!-- Orders List Container -->
+      <div id="orders-history-container">
+        <!-- Dynamically populated -->
+      </div>
+    </div>
+  </main>
+
+  <!-- Invoice Modal -->
+  <div class="modal-backdrop" id="invoice-modal">
+    <div class="modal-card" style="max-width: 600px;">
+      <div class="modal-header" style="text-align: left; border-bottom: 1px solid var(--border-light);">
+        <div class="flex justify-between items-center">
+          <div>
+            <h3 class="modal-title" id="inv-order-id">#ORD-XXXX</h3>
+            <span style="font-size: 0.8rem; color: var(--text-muted);" id="inv-date"></span>
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="closeInvoiceModal()">&times;</button>
+        </div>
+      </div>
+      <div class="modal-body" id="inv-body-content" style="max-height: 450px; overflow-y: auto;">
+        <!-- Filled dynamically -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeInvoiceModal()">Close</button>
+        <button class="btn btn-primary" onclick="window.print()">
+          <i class="fa-solid fa-print"></i> Print Invoice
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="../js/storage.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/products.js"></script>
+  <script src="../js/cart.js"></script>
+  <script src="../js/orders.js"></script>
+  <script src="../js/dispatch.js"></script>
+  <script src="../js/otp.js"></script>
+  <script src="../js/wallet.js"></script>
+  <script src="../js/notifications.js"></script>
+  <script src="../js/app.js"></script>
+
+  <script>
+    let currentFilter = 'ALL';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      Auth.checkAuth(['customer']);
+      renderHistory();
+    });
+
+    function filterHistory(filter, btn) {
+      currentFilter = filter;
+      document.querySelectorAll('.category-pill').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      renderHistory();
+    }
+
+    function renderHistory() {
+      const user = Auth.getCurrentUser();
+      let orders = Orders.getByCustomer(user.id);
+
+      if (currentFilter === 'ACTIVE') {
+        orders = orders.filter(o => ![ORDER_STATUS.DELIVERED, ORDER_STATUS.CANCELLED, ORDER_STATUS.REJECTED].includes(o.status));
+      } else if (currentFilter === 'DELIVERED') {
+        orders = orders.filter(o => o.status === ORDER_STATUS.DELIVERED);
+      } else if (currentFilter === 'CANCELLED') {
+        orders = orders.filter(o => [ORDER_STATUS.CANCELLED, ORDER_STATUS.REJECTED].includes(o.status));
+      }
+
+      const container = document.getElementById('orders-history-container');
+
+      if (orders.length === 0) {
+        container.innerHTML = `
+          <div class="card" style="text-align: center; padding: 4rem 1rem;">
+            <i class="fa-solid fa-box-open" style="font-size: 3rem; color: #cbd5e1; margin-bottom: 1rem; display: block;"></i>
+            <h3>No orders found</h3>
+            <p style="color: var(--text-muted); margin: 0.5rem 0 1.5rem;">There are no orders matching this filter.</p>
+            <a href="products.html" class="btn btn-primary">Start Shopping</a>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = orders.map(order => `
+        <div class="card" style="margin-bottom: 1.5rem;">
+          <div class="card-header">
+            <div>
+              <span style="font-size: 1.15rem; font-weight: 800; font-family: var(--font-heading);">Order #${order.id}</span>
+              <span style="font-size: 0.8rem; color: var(--text-muted); margin-left: 0.75rem;">${App.formatDateTime(order.createdAt)}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              ${App.getStatusBadge(order.status)}
+              <strong style="font-size: 1.15rem; color: var(--text-main); font-family: var(--font-heading);">${App.formatCurrency(order.total)}</strong>
+            </div>
+          </div>
+          <div class="card-body">
+            <div style="margin-bottom: 1rem;">
+              ${order.items.map(item => `
+                <span class="badge badge-secondary" style="margin-right: 0.4rem; margin-bottom: 0.4rem;">
+                  ${item.name} (${item.qty})
+                </span>
+              `).join('')}
+            </div>
+            <div class="flex justify-between items-center flex-wrap gap-2" style="font-size: 0.85rem; color: var(--text-muted); padding-top: 0.75rem; border-top: 1px solid var(--border-light);">
+              <div>
+                <i class="fa-solid fa-store"></i> ${order.storeName} • 
+                ${order.assignedRiderName ? `<i class="fa-solid fa-motorcycle"></i> Delivered by ${order.assignedRiderName}` : 'Assigning rider'}
+              </div>
+              <div class="flex items-center gap-2">
+                <button class="btn btn-outline btn-sm" onclick="openInvoice('${order.id}')">
+                  <i class="fa-solid fa-file-invoice"></i> View Invoice
+                </button>
+                <a href="order-tracking.html?orderId=${order.id}" class="btn btn-primary btn-sm">
+                  <i class="fa-solid fa-route"></i> Track Order
+                </a>
+                <button class="btn btn-outline btn-sm" onclick="reorderItems('${order.id}')" title="Add items to cart">
+                  <i class="fa-solid fa-rotate-right"></i> Reorder
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function reorderItems(orderId) {
+      const order = Orders.getById(orderId);
+      if (!order) return;
+      order.items.forEach(item => {
+        Cart.addItem(item.id, item.qty);
+      });
+      Notifications.showToast('Reorder Added', `${order.items.length} item(s) added to your basket.`, 'success');
+      window.location.href = 'cart.html';
+    }
+
+    function openInvoice(orderId) {
+      const order = Orders.getById(orderId);
+      if (!order) return;
+
+      document.getElementById('inv-order-id').textContent = `Invoice: Order #${order.id}`;
+      document.getElementById('inv-date').textContent = `Placed on: ${App.formatDateTime(order.createdAt)}`;
+
+      document.getElementById('inv-body-content').innerHTML = `
+        <div style="background-color: var(--bg-alt); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.25rem;">
+          <div class="flex justify-between" style="font-size: 0.85rem; margin-bottom: 0.35rem;">
+            <span>Merchant:</span>
+            <strong>${order.storeName}</strong>
+          </div>
+          <div class="flex justify-between" style="font-size: 0.85rem; margin-bottom: 0.35rem;">
+            <span>Customer:</span>
+            <strong>${order.customerName} (${order.customerPhone})</strong>
+          </div>
+          <div class="flex justify-between" style="font-size: 0.85rem; margin-bottom: 0.35rem;">
+            <span>Delivery Address:</span>
+            <span style="text-align: right; max-width: 300px;">${order.deliveryAddress}</span>
+          </div>
+          <div class="flex justify-between" style="font-size: 0.85rem;">
+            <span>Payment:</span>
+            <strong>${order.payment?.method || 'UPI'} (ID: ${order.payment?.transactionId || 'PAID'})</strong>
+          </div>
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-bottom: 1rem;">
+          <thead>
+            <tr style="border-bottom: 2px solid var(--border-light); text-align: left;">
+              <th style="padding: 0.5rem 0;">Item</th>
+              <th style="padding: 0.5rem; text-align: center;">Qty</th>
+              <th style="padding: 0.5rem; text-align: right;">Price</th>
+              <th style="padding: 0.5rem 0; text-align: right;">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${order.items.map(item => `
+              <tr style="border-bottom: 1px solid var(--border-light);">
+                <td style="padding: 0.5rem 0;">${item.name}</td>
+                <td style="padding: 0.5rem; text-align: center;">${item.qty}</td>
+                <td style="padding: 0.5rem; text-align: right;">₹${item.price.toFixed(2)}</td>
+                <td style="padding: 0.5rem 0; text-align: right;">₹${item.total.toFixed(2)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+
+        <div style="max-width: 250px; margin-left: auto;">
+          <div class="flex justify-between" style="font-size: 0.85rem; margin-bottom: 0.25rem;">
+            <span>Subtotal:</span>
+            <span>₹${order.subtotal.toFixed(2)}</span>
+          </div>
+          <div class="flex justify-between" style="font-size: 0.85rem; margin-bottom: 0.25rem;">
+            <span>Delivery Fee:</span>
+            <span>₹${(order.deliveryFee || 0).toFixed(2)}</span>
+          </div>
+          <div class="flex justify-between" style="font-size: 0.85rem; margin-bottom: 0.25rem;">
+            <span>Platform Fee:</span>
+            <span>₹${(order.platformFee || 0).toFixed(2)}</span>
+          </div>
+          <div class="flex justify-between" style="font-size: 0.85rem; margin-bottom: 0.25rem;">
+            <span>GST (5%):</span>
+            <span>₹${(order.gst || 0).toFixed(2)}</span>
+          </div>
+          <div class="flex justify-between" style="font-size: 1.1rem; font-weight: 800; border-top: 1px solid var(--border-light); padding-top: 0.5rem; color: var(--primary);">
+            <span>Total:</span>
+            <span>${App.formatCurrency(order.total)}</span>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('invoice-modal').style.display = 'flex';
+    }
+
+    function closeInvoiceModal() {
+      document.getElementById('invoice-modal').style.display = 'none';
+    }
+  </script>
+</body>
+</html>

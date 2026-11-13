@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Incoming Customer Orders - FreshMart Superstore</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/store.css">
+</head>
+<body class="dashboard-layout">
+
+  <!-- Sidebar -->
+  <aside class="dashboard-sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon" style="background: linear-gradient(135deg, #d97706, #f59e0b);">
+        <i class="fa-solid fa-store"></i>
+      </div>
+      <div class="brand-text">
+        <h2>FreshMart</h2>
+        <span>Store Operations</span>
+      </div>
+    </div>
+
+    <div class="sidebar-role-badge">
+      <i class="fa-solid fa-shop"></i>
+      <span>Logged in as <strong>Store Manager</strong></span>
+    </div>
+
+    <ul class="sidebar-nav">
+      <div class="nav-section-title">Order Fulfilment</div>
+      <li><a href="store-dashboard.html"><i class="fa-solid fa-gauge-high"></i> Store Dashboard</a></li>
+      <li>
+        <a href="incoming-orders.html" class="active">
+          <i class="fa-solid fa-inbox"></i> Incoming Orders
+          <span class="nav-badge" id="incoming-count-badge" style="background-color: var(--danger);">0</span>
+        </a>
+      </li>
+      <li><a href="order-management.html"><i class="fa-solid fa-boxes-packing"></i> Order Management</a></li>
+      <li><a href="store-wallet.html"><i class="fa-solid fa-wallet"></i> Store Wallet & Ledger</a></li>
+    </ul>
+
+    <div class="sidebar-user">
+      <div class="user-profile-info">
+        <img src="https://images.unsplash.com/photo-1578916171728-46686eac8d58?w=150&auto=format&fit=crop&q=80" alt="Store Manager" class="user-profile-avatar">
+        <div class="user-profile-text">
+          <div class="user-name">FreshMart Store</div>
+          <div class="user-role">Central Metro Outlet</div>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="Auth.logoutUser()" title="Logout">
+        <i class="fa-solid fa-power-off"></i>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dashboard-main">
+    <header class="dashboard-header">
+      <div class="header-left">
+        <button class="mobile-toggle" id="mobile-sidebar-toggle">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="header-title-box">
+          <h1>Incoming Order Queue</h1>
+          <p>Review customer carts, accept for preparation, or reject with reason</p>
+        </div>
+      </div>
+
+      <div class="header-right" style="display: flex; align-items: center; gap: 1rem;">
+        <!-- Online/Offline Store Toggle (Feature 2) -->
+        <div class="flex items-center gap-2" style="background: var(--bg-alt); padding: 0.35rem 0.75rem; border-radius: var(--radius-full); border: 1px solid var(--border-light);">
+          <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted);">Shop Duty:</span>
+          <button class="btn btn-sm btn-success" id="btn-store-duty-toggle" onclick="toggleStoreOnlineStatus()">
+            <i class="fa-solid fa-circle"></i> Online
+          </button>
+        </div>
+
+        <button class="btn btn-outline btn-sm" onclick="renderIncomingOrders()">
+          <i class="fa-solid fa-rotate"></i> Refresh Queue
+        </button>
+      </div>
+    </header>
+
+    <div class="dashboard-content">
+      
+      <div class="flex justify-between items-center" style="margin-bottom: 1.5rem;">
+        <div>
+          <h3>Pending Review (<span id="incoming-queue-count">0</span>)</h3>
+          <p style="font-size: 0.85rem; color: var(--text-muted);">Orders waiting for store confirmation</p>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="App.autoSimulateOrder()">
+          <i class="fa-solid fa-wand-magic-sparkles text-warning"></i> Generate Test Order
+        </button>
+      </div>
+
+      <div id="incoming-orders-list">
+        <!-- Dynamically rendered -->
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Rejection Reason Modal -->
+  <div class="modal-backdrop" id="reject-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-icon-badge" style="background: var(--danger-light); color: var(--danger);">
+          <i class="fa-solid fa-ban"></i>
+        </div>
+        <h3 class="modal-title">Reject Incoming Order</h3>
+        <p class="modal-subtitle">Specify a reason for rejecting Order <strong id="reject-order-id-label"></strong></p>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label" for="reject-reason-select">Rejection Reason</label>
+          <select id="reject-reason-select" class="form-control">
+            <option value="Items temporarily out of stock">Items temporarily out of stock</option>
+            <option value="Store kitchen at peak capacity">Store kitchen at peak capacity</option>
+            <option value="Delivery address exceeds operating radius">Delivery address exceeds operating radius</option>
+            <option value="Store closing / Inventory audit">Store closing / Inventory audit</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="reject-comments-input">Additional Notes (Optional)</label>
+          <textarea id="reject-comments-input" class="form-control" rows="2" placeholder="Explain details to customer..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeRejectModal()">Cancel</button>
+        <button class="btn btn-danger" onclick="confirmOrderRejection()">
+          <i class="fa-solid fa-xmark"></i> Confirm Rejection
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="../js/storage.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/products.js"></script>
+  <script src="../js/cart.js"></script>
+  <script src="../js/orders.js"></script>
+  <script src="../js/dispatch.js"></script>
+  <script src="../js/otp.js"></script>
+  <script src="../js/wallet.js"></script>
+  <script src="../js/notifications.js"></script>
+  <script src="../js/tracking-api.js"></script>
+  <script src="../js/app.js"></script>
+
+  <script>
+    let rejectingOrderId = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      Auth.checkAuth(['store', 'admin']);
+      updateStoreDutyUI();
+      renderIncomingOrders();
+    });
+
+    function updateStoreDutyUI() {
+      const users = Storage.get(STORAGE_KEYS.USERS, []);
+      const store = users.find(u => u.id === 'STR-001') || users.find(u => u.role === 'store');
+      const isOnline = store ? store.isOnline !== false : true;
+
+      const btn = document.getElementById('btn-store-duty-toggle');
+      if (btn) {
+        if (isOnline) {
+          btn.className = 'btn btn-sm btn-success';
+          btn.innerHTML = '<i class="fa-solid fa-circle"></i> Online';
+        } else {
+          btn.className = 'btn btn-sm btn-danger';
+          btn.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> Offline (Closed)';
+        }
+      }
+    }
+
+    function toggleStoreOnlineStatus() {
+      const users = Storage.get(STORAGE_KEYS.USERS, []);
+      const storeIndex = users.findIndex(u => u.id === 'STR-001');
+      if (storeIndex === -1) return;
+
+      const current = users[storeIndex].isOnline !== false;
+      users[storeIndex].isOnline = !current;
+      Storage.set(STORAGE_KEYS.USERS, users);
+
+      updateStoreDutyUI();
+
+      if (!users[storeIndex].isOnline) {
+        Notifications.showToast(
+          'Shop Toggled OFFLINE',
+          'Your shop is now marked closed. Customers in Town A will be prompted with "The Neighbors" nearby town delivery option.',
+          'warning',
+          7000
+        );
+      } else {
+        Notifications.showToast('Shop Toggled ONLINE', 'Your shop is open for local town orders.', 'success', 5000);
+      }
+    }
+
+    function renderIncomingOrders() {
+      const orders = Orders.getStoreOrders(ORDER_STATUS.NEW);
+      const container = document.getElementById('incoming-orders-list');
+      const countEl = document.getElementById('incoming-queue-count');
+      const badge = document.getElementById('incoming-count-badge');
+
+      countEl.textContent = orders.length;
+      badge.textContent = orders.length;
+
+      if (orders.length === 0) {
+        container.innerHTML = `
+          <div class="card" style="text-align: center; padding: 4rem 1.5rem;">
+            <i class="fa-solid fa-inbox" style="font-size: 3.5rem; color: #cbd5e1; margin-bottom: 1rem; display: block;"></i>
+            <h3>No Incoming Orders</h3>
+            <p style="color: var(--text-muted); max-width: 480px; margin: 0.5rem auto 1.5rem;">
+              You have reviewed all incoming orders! New orders placed by customers will chime and appear here instantly.
+            </p>
+            <button class="btn btn-primary" onclick="App.autoSimulateOrder()">
+              <i class="fa-solid fa-plus"></i> Simulate New Customer Order
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = orders.map(order => `
+        <div class="card" style="border-left: 4px solid var(--primary); margin-bottom: 1.5rem;">
+          <div class="card-header">
+            <div>
+              <span style="font-size: 1.25rem; font-weight: 800; font-family: var(--font-heading);">Incoming Order #${order.id}</span>
+              <span style="font-size: 0.8rem; color: var(--text-muted); margin-left: 0.75rem;">
+                <i class="fa-solid fa-clock"></i> Placed ${App.timeAgo(order.createdAt)}
+              </span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="badge badge-success"><i class="fa-solid fa-check"></i> Paid via ${order.payment?.method || 'UPI'}</span>
+              <span class="badge badge-primary">Store Net: ${App.formatCurrency(order.storeEarnings)}</span>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <!-- Customer Privacy Shield (Image 4 Step 2 Item 10: Order items ONLY, NO location data for shop) -->
+            <div style="background-color: var(--bg-alt); padding: 0.85rem 1rem; border-radius: var(--radius-md); margin-bottom: 1.25rem;">
+              <div class="flex justify-between items-center flex-wrap gap-2">
+                <div>
+                  <strong>Customer: ${order.customerName}</strong>
+                  <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.15rem;">
+                    <i class="fa-solid fa-shield-halved text-primary"></i> <strong>Location Protected:</strong> Street address & GPS coordinates are hidden from store view. Dispatched securely to assigned rider upon pickup.
+                  </p>
+                </div>
+                <div style="text-align: right;">
+                  <span class="badge badge-secondary"><i class="fa-solid fa-lock"></i> Privacy Guard Active</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Ordered Items List -->
+            <h4 style="font-size: 0.95rem; margin-bottom: 0.75rem;">Ordered Products (${order.items.length} items):</h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0.75rem; margin-bottom: 1.5rem;">
+              ${order.items.map(item => `
+                <div style="background: #fff; border: 1px solid var(--border-light); padding: 0.75rem; border-radius: var(--radius-md); display: flex; justify-content: space-between; align-items: center;">
+                  <div>
+                    <strong>${item.name}</strong>
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">Qty: <strong style="color: var(--primary);">${item.qty}</strong> • <span class="badge badge-light" style="font-size: 0.7rem;">${item.category}</span></div>
+                  </div>
+                  <strong>₹${item.total.toFixed(2)}</strong>
+                </div>
+              `).join('')}
+            </div>
+
+            <!-- Financial Breakdown Row (Feature 4: Varying Commission Slabs) -->
+            <div class="flex justify-between items-center flex-wrap gap-2" style="font-size: 0.85rem; padding-top: 0.75rem; border-top: 1px solid var(--border-light); margin-bottom: 1.5rem;">
+              <div>Customer Paid: <strong>${App.formatCurrency(order.total)}</strong></div>
+              <div>Category Commission Deducted: <strong style="color: var(--danger);">-₹${(order.totalCommission || (order.subtotal * 0.10)).toFixed(2)}</strong></div>
+              <div>Store Payout: <strong style="color: var(--success); font-size: 1.1rem;">${App.formatCurrency(order.storeEarnings)}</strong></div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex justify-end gap-2">
+              <button class="btn btn-outline" style="color: var(--danger); border-color: var(--danger);" onclick="openRejectModal('${order.id}')">
+                <i class="fa-solid fa-xmark"></i> Reject Order
+              </button>
+              <button class="btn btn-success btn-lg" onclick="acceptIncomingOrder('${order.id}')">
+                <i class="fa-solid fa-check"></i> Accept & Start Preparing &rarr;
+              </button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function acceptIncomingOrder(orderId) {
+      const res = Orders.updateOrderStatus(orderId, ORDER_STATUS.ACCEPTED, {
+        note: 'Order accepted by store. Item packing initiated.'
+      });
+
+      if (res.success) {
+        // Also automatically transition to PREPARING
+        Orders.updateOrderStatus(orderId, ORDER_STATUS.PREPARING, {
+          note: 'Store kitchen/staff is preparing and packing items.'
+        });
+
+        Notifications.showToast('Order Accepted!', `Order #${orderId} accepted and moved to Packing stage.`, 'success');
+        setTimeout(() => {
+          window.location.href = `order-management.html?orderId=${orderId}`;
+        }, 600);
+      }
+    }
+
+    function openRejectModal(orderId) {
+      rejectingOrderId = orderId;
+      document.getElementById('reject-order-id-label').textContent = `#${orderId}`;
+      document.getElementById('reject-modal').style.display = 'flex';
+    }
+
+    function closeRejectModal() {
+      document.getElementById('reject-modal').style.display = 'none';
+      rejectingOrderId = null;
+    }
+
+    function confirmOrderRejection() {
+      if (!rejectingOrderId) return;
+      const reason = document.getElementById('reject-reason-select').value;
+      const notes = document.getElementById('reject-comments-input').value.trim();
+      const fullReason = notes ? `${reason} (${notes})` : reason;
+
+      const res = Orders.updateOrderStatus(rejectingOrderId, ORDER_STATUS.REJECTED, {
+        rejectionReason: fullReason,
+        rejectedAt: new Date().toISOString(),
+        note: `Store rejected order. Reason: ${fullReason}`
+      });
+
+      closeRejectModal();
+
+      if (res.success) {
+        Notifications.showToast('Order Rejected', `Order #${rejectingOrderId} was rejected. Customer has been notified.`, 'warning');
+        renderIncomingOrders();
+      }
+    }
+  </script>
+</body>
+</html>

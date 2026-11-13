@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shopping Cart - Smart Store Delivery</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/customer.css">
+</head>
+<body class="dashboard-layout">
+
+  <!-- Sidebar -->
+  <aside class="dashboard-sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon" style="background: linear-gradient(135deg, #10b981, #059669);">
+        <i class="fa-solid fa-bicycle"></i>
+      </div>
+      <div class="brand-text">
+        <h2>instaa</h2>
+        <span style="font-size: 0.7rem; letter-spacing: 0.5px;">GROCERIES MADE EASIER</span>
+      </div>
+    </div>
+
+    <div class="sidebar-role-badge">
+      <i class="fa-solid fa-circle-user"></i>
+      <span>Logged in as <strong>Customer</strong></span>
+    </div>
+
+    <ul class="sidebar-nav">
+      <div class="nav-section-title">Shop & Deliver</div>
+      <li><a href="customer-dashboard.html"><i class="fa-solid fa-house"></i> Home Dashboard</a></li>
+      <li><a href="products.html"><i class="fa-solid fa-store"></i> Browse Products</a></li>
+      <li>
+        <a href="cart.html" class="active">
+          <i class="fa-solid fa-cart-shopping"></i> My Basket
+          <span class="nav-badge cart-badge">0</span>
+        </a>
+      </li>
+      <li><a href="order-tracking.html"><i class="fa-solid fa-route"></i> Live Tracking</a></li>
+      <li><a href="order-history.html"><i class="fa-solid fa-clock-rotate-left"></i> Order History</a></li>
+    </ul>
+
+    <div class="sidebar-user">
+      <div class="user-profile-info">
+        <img src="" alt="User" class="user-profile-avatar user-avatar" onerror="this.src='https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80'">
+        <div class="user-profile-text">
+          <div class="user-name">Loading...</div>
+          <div class="user-role">Customer</div>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="Auth.logoutUser()" title="Logout">
+        <i class="fa-solid fa-power-off"></i>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dashboard-main">
+    <header class="dashboard-header">
+      <div class="header-left">
+        <button class="mobile-toggle" id="mobile-sidebar-toggle">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="header-title-box">
+          <h1>My Shopping Basket</h1>
+          <p>Review items, adjust quantities, and proceed to checkout</p>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <a href="products.html" class="btn btn-outline btn-sm">
+          <i class="fa-solid fa-arrow-left"></i> Continue Shopping
+        </a>
+      </div>
+    </header>
+
+    <div class="dashboard-content">
+      <div class="cart-checkout-grid" id="cart-content-grid">
+        <!-- Dynamically rendered by renderCartPage() -->
+      </div>
+    </div>
+  </main>
+
+  <!-- Scripts -->
+  <script src="../js/storage.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/products.js"></script>
+  <script src="../js/cart.js"></script>
+  <script src="../js/orders.js"></script>
+  <script src="../js/dispatch.js"></script>
+  <script src="../js/otp.js"></script>
+  <script src="../js/wallet.js"></script>
+  <script src="../js/notifications.js"></script>
+  <script src="../js/app.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      Auth.checkAuth(['customer']);
+      renderCartPage();
+    });
+
+    function renderCartPage() {
+      const items = Cart.getItems();
+      const container = document.getElementById('cart-content-grid');
+
+      if (items.length === 0) {
+        container.style.display = 'block';
+        container.innerHTML = `
+          <div class="card" style="text-align: center; padding: 4rem 2rem;">
+            <i class="fa-solid fa-cart-shopping" style="font-size: 3.5rem; color: #cbd5e1; margin-bottom: 1rem; display: block;"></i>
+            <h2>Your basket is empty</h2>
+            <p style="color: var(--text-muted); max-width: 400px; margin: 0.5rem auto 1.5rem;">
+              Fresh farm fruits, groceries, bakery, and beverages are waiting for you at FreshMart Superstore.
+            </p>
+            <a href="products.html" class="btn btn-primary btn-lg">
+              <i class="fa-solid fa-bag-shopping"></i> Explore Fresh Produce
+            </a>
+          </div>
+        `;
+        return;
+      }
+
+      container.style.display = 'grid';
+      const totals = Cart.getTotals();
+
+      const itemsHtml = items.map(item => `
+        <div class="cart-item-row flex items-center justify-between" style="padding: 1.25rem 0; border-bottom: 1px solid var(--border-light);">
+          <div class="flex items-center gap-3">
+            <img src="${item.image}" alt="${item.name}" style="width: 68px; height: 68px; object-fit: cover; border-radius: var(--radius-md);">
+            <div>
+              <h4 style="font-size: 1.05rem; margin-bottom: 0.2rem;">${item.name}</h4>
+              <p style="font-size: 0.8rem; color: var(--text-muted);">${item.unit || '1 unit'} • ₹${item.price.toFixed(2)} each</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="cart-qty-control">
+              <button onclick="Cart.updateQuantity('${item.id}', -1)">-</button>
+              <span class="qty-display">${item.qty}</span>
+              <button onclick="Cart.updateQuantity('${item.id}', 1)">+</button>
+            </div>
+            <div style="min-width: 80px; text-align: right; font-weight: 700; font-family: var(--font-heading); font-size: 1.1rem;">
+              ₹${item.total.toFixed(2)}
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="Cart.removeItem('${item.id}')" title="Remove" style="color: var(--danger); border-color: transparent;">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </div>
+        </div>
+      `).join('');
+
+      container.innerHTML = `
+        <!-- Items Table Column -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title"><i class="fa-solid fa-bag-shopping text-primary"></i> Basket Items (${totals.itemCount})</h3>
+            <button class="btn btn-outline btn-sm" onclick="Cart.clearCart()" style="color: var(--danger);">
+              <i class="fa-solid fa-trash"></i> Empty Basket
+            </button>
+          </div>
+          <div class="card-body">
+            ${itemsHtml}
+          </div>
+        </div>
+
+        <!-- Order Summary Column -->
+        <div class="order-summary-card">
+          <h3 class="summary-title">Bill Breakdown</h3>
+          <div class="summary-row">
+            <span>Item Subtotal (${totals.itemCount} items)</span>
+            <span>₹${totals.subtotal.toFixed(2)}</span>
+          </div>
+          <div class="summary-row">
+            <span>Delivery Fee ${totals.subtotal >= 700 ? '<strong style="color: var(--success);">(FREE)</strong>' : ''}</span>
+            <span>${totals.deliveryFee === 0 ? '<span style="color: var(--success); font-weight: 700;">FREE</span>' : `₹${totals.deliveryFee.toFixed(2)}`}</span>
+          </div>
+          <div class="summary-row">
+            <span>Platform Fee</span>
+            <span>₹${totals.platformFee.toFixed(2)}</span>
+          </div>
+          <div class="summary-row">
+            <span>Taxes & GST (5%)</span>
+            <span>₹${totals.gst.toFixed(2)}</span>
+          </div>
+          <div class="summary-row total-row">
+            <span>Grand Total</span>
+            <span style="color: var(--primary);">₹${totals.grandTotal.toFixed(2)}</span>
+          </div>
+
+          <div style="margin: 1.5rem 0;">
+            <div id="cart-town-delivery-notice" style="background: #f0fdf4; border: 1px dashed #22c55e; border-radius: var(--radius-md); padding: 0.75rem; font-size: 0.8rem; color: #15803d; display: flex; align-items: center; gap: 0.5rem;">
+              <i class="fa-solid fa-bolt"></i>
+              <span>Superfast Delivery: Dispatched directly from local stores in 15-20 mins (₹40 standard)</span>
+            </div>
+          </div>
+
+          <a href="checkout.html" class="btn btn-primary btn-block btn-lg">
+            Proceed to Checkout <i class="fa-solid fa-arrow-right"></i>
+          </a>
+        </div>
+      `;
+    }
+  </script>
+</body>
+</html>
