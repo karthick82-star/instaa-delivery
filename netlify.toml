@@ -1,0 +1,20 @@
+# Netlify Deployment Configuration for INSTAA
+# Hyperlocal Delivery Ecosystem
+
+[build]
+  publish = "delivery"
+
+# Custom HTTP Headers for Map Tiles, GPS Geolocation & Assets
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Permissions-Policy = "geolocation=(self)"
+    X-Content-Type-Options = "nosniff"
+
+# Optional backend proxy: if deploying server.js to Render/Railway/Koyeb:
+# [[redirects]]
+#   from = "/api/*"
+#   to = "https://your-backend.onrender.com/api/:splat"
+#   status = 200
+#   force = true
