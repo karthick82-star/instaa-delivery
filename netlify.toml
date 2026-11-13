@@ -2,7 +2,7 @@
 # Hyperlocal Delivery Ecosystem
 
 [build]
-  publish = "delivery"
+  publish = "."
 
 # Custom HTTP Headers for Map Tiles, GPS Geolocation & Assets
 [[headers]]

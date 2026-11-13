@@ -14,7 +14,6 @@
 
 ### Run Locally
 ```bash
-cd delivery
 node server.js
 ```
 Open `http://localhost:3000` in your browser.
